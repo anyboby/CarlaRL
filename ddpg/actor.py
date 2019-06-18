@@ -29,9 +29,9 @@ class Actor:
         
         state = Input((self.state_size))
         # Convolutions
-        x = Conv2D(8, kernel_size=8, activation='relu', input_shape=self.state_size)(state)
+        x = Conv2D(4, kernel_size=5, activation='relu', input_shape=self.state_size)(state)
         x = MaxPool2D(pool_size=(2, 2))(x)
-        x = Conv2D(16, kernel_size=8, activation='relu') (x)
+        x = Conv2D(8, kernel_size=5, activation='relu') (x)
         x = MaxPool2D(pool_size=(2, 2))(x)
         
         # Connect convolution and dense layers
@@ -88,5 +88,5 @@ class Actor:
 
     def load_weights(self, path):
         self.model.load_weights(path)
-#actor = Actor((96,96,1), 3, 0.001, 0.1)
+#actor = Actor((20,20,1), 3, 0.001, 0.1)
 #actor.model.summary()

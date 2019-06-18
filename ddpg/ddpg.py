@@ -24,7 +24,7 @@ class DDPG:
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(10000)
-        self.steps = 11
+        self.steps = 1001
         self.noise_episodes = 1000 * 0.2
 
     def policy_action(self, s):
@@ -87,9 +87,9 @@ class DDPG:
 
             
             # Convert to grayscale
+            old_state = cv2.resize(old_state, (20, 20))
             old_state = cv2.cvtColor(old_state, cv2.COLOR_BGR2GRAY)
             old_state = old_state.reshape(old_state.shape[0], old_state.shape[1] , 1)
-            
             for step in range(self.steps):
                 if render:
                     env.render()                   
@@ -101,8 +101,10 @@ class DDPG:
                 new_state, r, done, _ = env.step(a)
                 
                 # Reshape new state
+                new_state = cv2.resize(new_state, (20, 20))
                 new_state = cv2.cvtColor(new_state, cv2.COLOR_BGR2GRAY)
                 new_state = new_state.reshape(new_state.shape[0], new_state.shape[1] , 1)
+                cv2.imshow('image',new_state)
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)
                 if self.buffer.count > batch_size:
@@ -125,14 +127,16 @@ class DDPG:
                         myfile.write("\n")
                     break;
             # Add to  summary
-            with tf.Session() as sess:
-                score = tf.summary.scalar('score', cumul_reward)
-                s = sess.run(score)
-                summary_writer.add_summary(s, global_step=e)
-                summary_writer.flush()
+            score = self.tfSummary('score', cumul_reward)
+            summary_writer.add_summary(score, global_step=e)
+            summary_writer.flush()
+            
             self.save_weights('')
             print("Score: " + str(cumul_reward))
         return results
+    
+    def tfSummary(self, tag, val):
+        return tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=val)])
 
     def save_weights(self, path):
         path += '_LR_{}'.format(self.learning_rate)

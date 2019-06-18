@@ -5,6 +5,7 @@ import numpy as np
 import time
 import cv2
 from rl.random import OrnsteinUhlenbeckProcess
+import tensorflow as tf
 
 
 class DDPG:
@@ -23,7 +24,7 @@ class DDPG:
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(10000)
-        self.steps = 501
+        self.steps = 11
         self.noise_episodes = 1000 * 0.2
 
     def policy_action(self, s):
@@ -72,11 +73,11 @@ class DDPG:
         f = open('results.txt', 'r+')
         f.truncate(0)
         f.close()
-        
+        summary_writer = tf.summary.FileWriter('./logs')
         
         for e in range(nb_episodes):
             start = time.time()
-            with open("results.txt", "a") as myfile:
+            with open("./results.txt", "a") as myfile:
                 myfile.write("***************** Episode: {}".format(e))
             # Reset episode
             time_step, cumul_reward, done = 0, 0, False
@@ -123,7 +124,13 @@ class DDPG:
                         myfile.write("Episode took: {} seconds".format(end-start))
                         myfile.write("\n")
                     break;
-            #self.save_weights('')
+            # Add to  summary
+            with tf.Session() as sess:
+                score = tf.summary.scalar('score', cumul_reward)
+                s = sess.run(score)
+                summary_writer.add_summary(s, global_step=e)
+                summary_writer.flush()
+            self.save_weights('')
             print("Score: " + str(cumul_reward))
         return results
 

@@ -29,9 +29,9 @@ class Critic:
     '''
     def _build_model(self):
         state = Input((self.state_size))
-        x = Conv2D(4, kernel_size=5, activation='relu', input_shape=self.state_size)(state)
+        x = Conv2D(2, kernel_size=4, activation='relu', input_shape=self.state_size)(state)
         x = MaxPool2D(pool_size=(2, 2))(x)
-        x = Conv2D(8, kernel_size=5, activation='relu')(x)
+        x = Conv2D(4, kernel_size=4, activation='relu')(x)
         x = MaxPool2D(pool_size=(2, 2))(x)
         x = BatchNormalization()(x)
         

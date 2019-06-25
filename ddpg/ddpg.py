@@ -18,15 +18,16 @@ class DDPG:
         # Environment and parameters
         self.state_size = (batch_no,) + state_size
         self.action_size = action_size
-        self.gamma = 0.99
-        self.learning_rate = 0.001
+        self.gamma = 0.9
+        self.learning_rate = 0.01
         # Create actor and critic networks
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(10000)
         self.steps = 1001
-        self.noise_episodes = 1000 * 0.2
-
+        self.noise_episodes = 1001
+        self.noise_decay = 0.999
+        
     def policy_action(self, s):
         """ Use the actor to predict value
         """
@@ -64,6 +65,7 @@ class DDPG:
         # Transfer weights to target networks at rate Tau
         self.actor.transfer_weights()
         self.critic.transfer_weights()
+        
 
     def train(self, env, render, batch_size, nb_episodes):
         results = []
@@ -87,7 +89,7 @@ class DDPG:
 
             
             # Convert to grayscale
-            old_state = cv2.resize(old_state, (20, 20))
+            old_state = cv2.resize(old_state, (15, 15))
             old_state = cv2.cvtColor(old_state, cv2.COLOR_BGR2GRAY)
             old_state = old_state.reshape(old_state.shape[0], old_state.shape[1] , 1)
             for step in range(self.steps):
@@ -95,13 +97,16 @@ class DDPG:
                     env.render()                   
                 # Actor picks an action (following the deterministic policy)
                 a = self.policy_action(old_state)
-                
-                if e < self.noise_episodes:
-                    a = np.clip(a+noise.sample(), -1, 1)
+                if step % 300 == 0:
+                    print("Action sample: ", a)
+                #if e < self.noise_episodes:
+                a = np.clip(a+noise.sample() * self.noise_decay, -1, 1)
+                self.noise_decay = self.noise_decay * 0.999
+                #print("decay at step {} : {}".format(step, self.noise_decay))
                 new_state, r, done, _ = env.step(a)
-                
+                #print(a)
                 # Reshape new state
-                new_state = cv2.resize(new_state, (20, 20))
+                new_state = cv2.resize(new_state, (15, 15))
                 new_state = cv2.cvtColor(new_state, cv2.COLOR_BGR2GRAY)
                 new_state = new_state.reshape(new_state.shape[0], new_state.shape[1] , 1)
                 cv2.imshow('image',new_state)

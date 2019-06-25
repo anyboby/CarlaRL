@@ -1,4 +1,1 @@
- 
-tensorboard --logdir=logs
-
-auf localhost:6006
+tensorboard --logdir=logs --host=127.0.0.1

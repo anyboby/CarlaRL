@@ -1,7 +1,18 @@
- 
-Evaluations einbauen
-Tensorgraph (x)
-Bilder downscalen -> 30 x 30
-CartPole env
-ggf autoencoder
-jupyter notebook -> python (x)
+- 2 outputs with acc and 1 - acc
+- No negative acc output
+- VAE instead of CNN
+- Memory buffer logic ansehen
+- early termination mit negativem reward
+- Noise decay pro episode bis ca. 50 Prozent
+- Set start point?
+- State vereinfachen (bottom)
+- Tensorflow Zeitstempel
+- tau ggf größer
+- lernrate 0.001?
+
+
+
+Präsi:
+- Kurz erklären (Lagos)
+- Warum diese gewählt wurden
+- Bis dahin gym zum laufen bringen

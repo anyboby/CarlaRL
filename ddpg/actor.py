@@ -39,9 +39,9 @@ class Actor:
         x = Flatten()(x)
         
         # 3 hidden layers
-        x = Dense(64, activation='relu')(x)
+        x = Dense(300, activation='relu')(x)
         # Creates 512 x 512 weights
-        x = Dense(128, activation='relu')(x)
+        x = Dense(600, activation='relu')(x)
         x = BatchNormalization()(x)
         
         # Defining the output for each dimension seperately

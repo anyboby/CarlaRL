@@ -41,8 +41,8 @@ class Critic:
         
         # TODO: In the original paper the actions are merged in the second hidden layer
         x = Flatten()(x)
-        x = concatenate([Dense(128, activation='relu')(x), action_layer])
-        x = Dense(128, activation='relu')(x)
+        x = concatenate([Dense(300, activation='relu')(x), action_layer])
+        x = Dense(600, activation='relu')(x)
         out = Dense(1, activation='linear', kernel_initializer=RandomUniform(minval=-0.05,maxval=0.05))(x)
         return Model([state, action_layer], out)
     

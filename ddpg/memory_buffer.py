@@ -1,6 +1,7 @@
 from collections import deque
 import random
 import numpy as np
+from sumtree import SumTree
 
 class MemoryBuffer(object):
     """ Memory Buffer Helper class for Experience Replay
@@ -87,6 +88,6 @@ class MemoryBuffer(object):
     def clear(self):
         """ Clear buffer / Sum Tree
         """
-        if(self.with_per): self.buffer = SumTree(buffer_size)
+        if(self.with_per): self.buffer = SumTree(self.buffer_size)
         else: self.buffer = deque()
         self.count = 0

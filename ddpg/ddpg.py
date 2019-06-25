@@ -18,14 +18,13 @@ class DDPG:
         # Environment and parameters
         self.state_size = (batch_no,) + state_size
         self.action_size = action_size
-        self.gamma = 0.9
-        self.learning_rate = 0.001
+        self.gamma = 0.99
+        self.learning_rate = 0.0005
         # Create actor and critic networks
-        self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.01)
-        self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.01)
+        self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
+        self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(10000)
-        self.steps = 1001
-        self.noise_episodes = 1001
+        self.steps = 1000
         self.noise_decay = 0.999
         
     def policy_action(self, s):
@@ -69,9 +68,6 @@ class DDPG:
 
     def train(self, env, render, batch_size, nb_episodes):
         results = []
-
-        # First, gather experience
-        # tqdm_e = tqdm(range(nb_episodes), desc='Score', leave=True, unit=" episodes")
         f = open('results.txt', 'r+')
         f.truncate(0)
         f.close()
@@ -93,13 +89,11 @@ class DDPG:
             old_state = old_state.reshape(old_state.shape[0], old_state.shape[1] , 1)
 
 
-
             for step in range(self.steps):
                 if render:
                     env.render()                   
                 # Actor picks an action (following the deterministic policy)
                 a = self.policy_action(old_state)
-                #if e < self.noise_episodes:
                 noise_sample = noise.sample() * self.noise_decay
                 a = np.clip(a+noise_sample, -1, 1)
                 # scaling the acc and brake
@@ -107,7 +101,7 @@ class DDPG:
                     a[1] = 0
                 if a[2] < 0:
                     a[2] = 0            
-                if step % 1000 == 0:
+                if step % 800 == 0 and step != 0:
                     print("Action sample: {} with decay: {:.4f} and {}".format(a, self.noise_decay, noise_sample))
                 #print("decay at step {} : {}".format(step, self.noise_decay))
                 new_state, r, done, _ = env.step(a)
@@ -123,16 +117,14 @@ class DDPG:
                         if val1[0] > 140:
                             val1[0] = 255
 
-
-
-                cv2.imshow('image',new_state)
+                cv2.imshow('Car Racing', new_state)
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)
+                # Update every batch_size steps
                 if self.buffer.count > batch_size and step % batch_size == 0:
                     states, actions, rewards, dones, new_states, _ = self.sample_batch(batch_size)
                     q_values = self.critic.target_predict([new_states, self.actor.target_predict(new_states)])
                     critic_target = self.bellman(rewards, q_values, dones)
-                    print("MODELUPDATE at ", step)
                     self.update_models(states, actions, critic_target)
                 old_state = new_state
                 cumul_reward += r
@@ -154,7 +146,10 @@ class DDPG:
             summary_writer.flush()
 
             # Update noise
-            self.noise_decay = self.noise_decay * 0.99
+            self.noise_decay = self.noise_decay * 0.995
+            decay = self.tfSummary('noise', self.noise_decay)
+            summary_writer.add_summary(decay, global_step=e)
+            summary_writer.flush()
             
             self.save_weights('')
             print("Score: " + str(cumul_reward))
@@ -171,3 +166,8 @@ class DDPG:
     def load_weights(self, path_actor, path_critic):
         self.critic.load_weights(path_critic)
         self.actor.load_weights(path_actor)
+
+
+# TODO:
+# 1. Noise decay abschwächen
+# 2. Learning rate evtl kleiner

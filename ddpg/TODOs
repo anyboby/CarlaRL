@@ -9,8 +9,9 @@
 - Tensorflow Zeitstempel
 - tau ggf größer
 - lernrate 0.001?
-
-
+- Remove noise for testing
+- learning rate decay?
+- simplify memory buffer (remove gumtree) or use PER
 
 Präsi:
 - Kurz erklären (Lagos)

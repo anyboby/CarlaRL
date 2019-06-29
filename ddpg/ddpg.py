@@ -19,11 +19,11 @@ class DDPG:
         self.state_size = (batch_no,) + state_size
         self.action_size = action_size
         self.gamma = 0.99
-        self.learning_rate = 0.0005
+        self.learning_rate = 0.001
         # Create actor and critic networks
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
-        self.buffer = MemoryBuffer(10000)
+        self.buffer = MemoryBuffer(20000)
         self.steps = 1000
         self.noise_decay = 0.999
         
@@ -101,7 +101,7 @@ class DDPG:
                     a[1] = 0
                 if a[2] < 0:
                     a[2] = 0            
-                if step % 800 == 0 and step != 0:
+                if step % 500 == 0 and step != 0:
                     print("Action sample: {} with decay: {:.4f} and {}".format(a, self.noise_decay, noise_sample))
                 #print("decay at step {} : {}".format(step, self.noise_decay))
                 new_state, r, done, _ = env.step(a)
@@ -117,7 +117,14 @@ class DDPG:
                         if val1[0] > 140:
                             val1[0] = 255
 
+
+
+                # Show results every xth episode
+                #if e % 50 == 0:
+                #    env.render()
+
                 cv2.imshow('Car Racing', new_state)
+
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)
                 # Update every batch_size steps
@@ -146,7 +153,9 @@ class DDPG:
             summary_writer.flush()
 
             # Update noise
-            self.noise_decay = self.noise_decay * 0.995
+            # Update every 4th episode. Leads to 0.36 at 4000
+            if e % 4 == 0:
+                self.noise_decay = self.noise_decay * 0.999
             decay = self.tfSummary('noise', self.noise_decay)
             summary_writer.add_summary(decay, global_step=e)
             summary_writer.flush()
@@ -169,5 +178,16 @@ class DDPG:
 
 
 # TODO:
+# LISTE an parameteränderungen machen!
 # 1. Noise decay abschwächen
-# 2. Learning rate evtl kleiner
+# Batch größe verringern
+# Einzelne rewards mal printen, wann ist er positiv? wann negativ?
+# Oscillations:
+# - training frühzeitig abbrechen
+# - anderes environment ausprobieren
+# - Hidden unit sizes
+# - buffer größer evtl? oder kleiner?
+# nice visualisierung machen so wie andy
+# 2. Learning rate evtl kleiner oder Grund für langsames lernen? Target net (teta gamma?)?
+# Warum wird er wieder schlecht? Weil tau zu groß?
+# 3. Loss funktion von actor & critic printen

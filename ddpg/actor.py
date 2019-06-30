@@ -22,6 +22,11 @@ class Actor:
         # Target net
         self.target_model = self._build_model()
         self.adam_optimizer = self.optimizer()
+        # Copyweights
+        W, target_W = self.model.get_weights(), self.target_model.get_weights()
+        for i in range(len(W)):
+            target_W[i] = W[i]
+
     '''
     Build a convolutional neural net with 3 output neurons
     '''
@@ -29,9 +34,9 @@ class Actor:
         
         state = Input((self.state_size))
         # Convolutions
-        x = Conv2D(2, kernel_size=4, activation='relu', input_shape=self.state_size)(state)
+        x = Conv2D(20, kernel_size=4, activation='relu', input_shape=self.state_size)(state)
         x = MaxPool2D(pool_size=(2, 2))(x)
-        x = Conv2D(4, kernel_size=4, activation='relu') (x)
+        x = Conv2D(40, kernel_size=4, activation='relu') (x)
         x = MaxPool2D(pool_size=(2, 2))(x)
         
         # Connect convolution and dense layers
@@ -88,5 +93,6 @@ class Actor:
 
     def load_weights(self, path):
         self.model.load_weights(path)
+        self.target_model.load_weights(path)
 #actor = Actor((20,20,1), 3, 0.001, 0.1)
 #actor.model.summary()

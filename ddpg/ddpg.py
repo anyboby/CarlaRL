@@ -19,14 +19,14 @@ class DDPG:
         self.state_size = (batch_no,) + state_size
         self.action_size = action_size
         self.gamma = 0.99
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0005
         # Create actor and critic networks
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
-        self.buffer = MemoryBuffer(20000)
-        self.steps = 1000
+        self.buffer = MemoryBuffer(100000)
+        self.steps = 1200
         self.noise_decay = 0.999
-        
+
     def policy_action(self, s):
         """ Use the actor to predict value
         """
@@ -97,13 +97,8 @@ class DDPG:
                 noise_sample = noise.sample() * self.noise_decay
                 a = np.clip(a+noise_sample, -1, 1)
                 # scaling the acc and brake
-                if a[1] < 0:
-                    a[1] = 0
-                if a[2] < 0:
-                    a[2] = 0            
                 if step % 500 == 0 and step != 0:
                     print("Action sample: {} with decay: {:.4f} and {}".format(a, self.noise_decay, noise_sample))
-                #print("decay at step {} : {}".format(step, self.noise_decay))
                 new_state, r, done, _ = env.step(a)
 
                 # Reshape new state
@@ -117,18 +112,12 @@ class DDPG:
                         if val1[0] > 140:
                             val1[0] = 255
 
-
-
-                # Show results every xth episode
-                #if e % 50 == 0:
-                #    env.render()
-
                 cv2.imshow('Car Racing', new_state)
 
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)
                 # Update every batch_size steps
-                if self.buffer.count > batch_size and step % batch_size == 0:
+                if self.buffer.count > batch_size:
                     states, actions, rewards, dones, new_states, _ = self.sample_batch(batch_size)
                     q_values = self.critic.target_predict([new_states, self.actor.target_predict(new_states)])
                     critic_target = self.bellman(rewards, q_values, dones)
@@ -141,21 +130,18 @@ class DDPG:
                         myfile.write("\n")
                 time_step += 1
                 
-                if done or (step == (self.steps - 1)):
+                if done or (step >= (self.steps - 1)):
                     with open("results.txt", "a") as myfile:
                         end = time.time()
                         myfile.write("Episode took: {} seconds".format(end-start))
                         myfile.write("\n")
-                    break;
+                    break
             # Add to  summary
             score = self.tfSummary('score', cumul_reward)
             summary_writer.add_summary(score, global_step=e)
             summary_writer.flush()
 
-            # Update noise
-            # Update every 4th episode. Leads to 0.36 at 4000
-            if e % 4 == 0:
-                self.noise_decay = self.noise_decay * 0.999
+            self.noise_decay = self.noise_decay * 0.999
             decay = self.tfSummary('noise', self.noise_decay)
             summary_writer.add_summary(decay, global_step=e)
             summary_writer.flush()

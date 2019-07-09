@@ -1,0 +1,54 @@
+################## Starten
+Erstmal ein virtual env erzeugen: 
+
+virtualenv -p python3 carla_env
+source carla_env/bin/activate
+pip install pygame numpy networkx
+
+
+- Zun?chst brauchen wir diese Umgebungsvariable: 
+export CARLA_ROOT=/carla-nopng-0.9.5/
+export PATH=$PATH:$CARLA_ROOT
+
+- Carla liegt unter root/carla-nopng-0.9.5/ (z.B. rottach@ids-hubbard:/carla-nopng-0.9.5$)
+- CarlaUE4.sh startet Carla ohne Parameter
+- ./CarlaUE4.sh /HDMaps/Town02 startet die zweite Stadt
+- Alle Parameter wie z.B. Auto usw. sind in CarlaSettings.ini welches als parameter ?bergeben wird:
+also z.B. -carla-settings=CarlaSettings.ini
+
+
+Sieht beispielsweise so aus:
+NumberOfVehicles=60
+NumberOfPedestrians=60
+WeatherId=3
+
+
+WICHTIG:
+1. Starte CarlaUE4.sh -carla-server (Server)
+(1. OHNE GUI: SDL_VIDEODRIVER=offscreen SDL_HINT_CUDA_DEVICE=0 sh CarlaUE4.sh -carla-server)
+2. Starte die python api (Client) z.B. mit pygame
+
+
+################ Optimierung
+cd /
+cp -r carla-nopng-0.9.5/ ~/no_backup/
+
+cd ~/no_backup/carla-nopng-0.9.5/CarlaUE4/Config/
+kate DefaultEngine.ini
+--> r.TextureStreaming=True
+
+
+################ Wrapper
+1. Exportieren der Env vars oben
+2. Installieren aller libs in das virtualenv
+pip install --upgrade protobuf
+pip3 install scipy==1.1.0
+3. SDL_VIDEODRIVER=offscreen SDL_HINT_CUDA_DEVICE=0 sh CarlaUE4.sh -carla-server starten
+4. python CARLA-wrapper/test_carlaenv.py
+
+
+
+################# Schlie?en
+- Manuell mit ALT + SPACE und dann auf exit dr?cken
+
+

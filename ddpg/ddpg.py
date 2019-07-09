@@ -19,6 +19,7 @@ class DDPG:
         self.state_size = (batch_no,) + state_size
         self.action_size = action_size
         self.gamma = 0.99
+        # TODO: Dynamisch (nur falls alle gleich trainieren) bzw. höhere Lernrate
         self.learning_rate = 0.0005
         # Create actor and critic networks
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
@@ -95,7 +96,7 @@ class DDPG:
                 # Actor picks an action (following the deterministic policy)
                 a = self.policy_action(old_state)
                 noise_sample = noise.sample() * self.noise_decay
-                a = np.clip(a+noise_sample, -1, 1)
+                #a = np.clip(a+noise_sample, -1, 1)
                 # scaling the acc and brake
                 if step % 500 == 0 and step != 0:
                     print("Action sample: {} with decay: {:.4f} and {}".format(a, self.noise_decay, noise_sample))
@@ -117,7 +118,8 @@ class DDPG:
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)
                 # Update every batch_size steps
-                if self.buffer.count > batch_size:
+                # TODO!!!!!!!!!!!!!!!!!!! BADGES TRAINIEREN
+                if self.buffer.count > batch_size and False:
                     states, actions, rewards, dones, new_states, _ = self.sample_batch(batch_size)
                     q_values = self.critic.target_predict([new_states, self.actor.target_predict(new_states)])
                     critic_target = self.bellman(rewards, q_values, dones)

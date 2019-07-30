@@ -48,3 +48,9 @@ python macad-gym/setup.py install
 export CARLA_ROOT=/carla-nopng-0.9.5/
 export PATH=$PATH:$CARLA_ROOT
 export CARLA_SERVER=/carla-nopng-0.9.5/CarlaUE4.sh
+
+dann:
+import macad_gym
+env = gym.make("HomoNcomIndePOIntrxMASS3CTWN3-v0")
+
+ggf. macad_gym.src.macad_gym

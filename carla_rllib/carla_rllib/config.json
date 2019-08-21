@@ -1,0 +1,21 @@
+{   
+    "agent_type": "continuous",
+    "frame_skip": 0,
+    "delta_sec": 0.05,
+    "max_frames_per_episode": 1000,
+    "sync_mode": true,
+    "stable_baselines": true,
+    "render": true,
+    "hosts": [
+        "localhost"
+    ],
+    "ports": [
+        2000
+    ],
+    "maps": [
+        "Town05"
+    ],
+    "num_agents": [
+        1
+    ]
+}

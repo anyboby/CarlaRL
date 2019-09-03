@@ -3,7 +3,7 @@
 ##Virtual env erzeugen:
 
 virtualenv -p python3 carla_env
-source carla_env/bin/activate
+source carla_env/bin/activate 
 
 ##Bashrc anpassen:
 CARLA_ROOT="/fzi/ids/rottach/no_backup/carla_0.9.6"

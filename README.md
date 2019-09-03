@@ -7,7 +7,7 @@ pip install pygame numpy networkx
 
 
 - Zun?chst brauchen wir diese Umgebungsvariable: 
-export CARLA_ROOT=/carla-nopng-0.9.5/
+export CARLA_ROOT=/carla-nopng-0.9.5/ \n
 export PATH=$PATH:$CARLA_ROOT
 
 - Carla liegt unter root/carla-nopng-0.9.5/ (z.B. rottach@ids-hubbard:/carla-nopng-0.9.5$)

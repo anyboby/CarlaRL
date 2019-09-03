@@ -51,15 +51,7 @@ class BaseEnv(gym.Env):
         self.frame = None
         self.timeout = 2.0
 
-        # Initialize client and get/load map
-        client = carla.Client(self._host, self._port)
-        self.world = client.get_world()
-
-        print("client: " + str(carla))
-        print("world: " + str(self.world))
-
-        #print("world: " + str(client.get_world())))
-        
+        # Initialize client and get/load map        
         try:
             client = carla.Client(self._host, self._port)
             self.world = client.get_world()

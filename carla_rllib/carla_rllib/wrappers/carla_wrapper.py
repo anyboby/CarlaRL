@@ -241,9 +241,10 @@ class BaseWrapper(object):
     def _is_terminal(self):
         """Check terminal conditions"""
         # TODO: Adjust terminal conditions
-        if (self.state.collision or
-            self.state.distance_to_center_line > 1.8
-                or self.state.elapsed_ticks >= 1000):
+        # UNCOMMENTED: 
+        # self.state.collision
+        # self.state.distance_to_center_line > 1.8
+        if (self.state.elapsed_ticks >= 1000):
             return True
         else:
             return False

@@ -63,7 +63,7 @@ if __name__ == "__main__":
             clock.tick(5)
 
             y +=1
-            if y%10 == 0:
+            if y%2 == 0:
                 print("reward",reward)
                 y = 0
 

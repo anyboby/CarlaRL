@@ -51,6 +51,10 @@ class BaseEnv(gym.Env):
         self.frame = None
         self.timeout = 2.0
 
+        # Memory for reward functions
+        self.velocity = 0
+        self.lane_invasion = 0
+
         # Initialize client and get/load map        
         try:
             client = carla.Client(self._host, self._port)
@@ -250,15 +254,25 @@ class BaseEnv(gym.Env):
 
     def _calculate_reward(self, agent):
         """Return the current reward"""
-        # Get all the agent-specific information
-        position = agent.state.position
-        print(position)
-
+        # Get agent sensor measurements
+        lane_invasion = agent.state.lane_invasion
         velocity = agent.state.velocity
-        collisions  = agent.state.collision
+        collisions  = agent.state.collision 
+        
+        # Calculate temporal differences
+        invasions_incr = lane_invasion - self.lane_invasion
+        #velocity_incr = velocity - self.velocity
+        collision_penalty = 0
+        if collisions == True:
+            collision_penalty = 100
 
+        # Update values
+        self.lane_invasion = lane_invasion
+        #self.velocity = velocity
 
-        reward = 0
+        reward = -1
+        reward = reward + (velocity/10) - 30 * int(invasions_incr) - collision_penalty
+
         return reward
 
     def _is_done(self):

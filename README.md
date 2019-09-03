@@ -39,6 +39,7 @@ WICHTIG:
 	$ tar -zxvf carla-nopng_0.9.6.tar.gz
 	
 	edit CARLA_ROOT in bashrc(add following lines if necessary):
+
 	pythonpath necessary to point python to carla_rllib (maybe not necessary in future versions)
 
 	export CARLA_ROOT=/fzi/ids/zanger/no_backup/zanger/carla_0.9.6/

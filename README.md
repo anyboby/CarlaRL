@@ -1,6 +1,11 @@
 # Prerequisites
 
+virtualenv -p python3 carla_env
+source carla_env/bin/activate
+pip install pygame numpy networkx
+
 ##Virtual env erzeugen:
+
 
 virtualenv -p python3 carla_env
 source carla_env/bin/activate 

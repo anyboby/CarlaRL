@@ -9,6 +9,7 @@ import matplotlib.image as mpimg
 from PIL import Image
 from carla_rllib.environments.carla_envs.config import BaseConfig, parse_json
 
+# ------------------------------------------------------------------------
 argparser = argparse.ArgumentParser(
     description='CARLA RLLIB ENV')
 package_path, _ = os.path.split(os.path.abspath(carla_rllib.__file__))
@@ -24,7 +25,18 @@ config_json = json.load(open(args.config))
 configs = parse_json(config_json)
 print("-----Configuration-----")
 print(configs[0])
+# ------------------------------------------------------------------------
+# Functions
 
+def preprocess_state(obs):
+    # Remove irrelevant colors
+    obs_proc = Image.fromarray(obs, 'RGB')
+    obs_proc = obs_proc.resize((50,50), Image.ANTIALIAS)
+    imgplot = plt.imshow(obs_proc)
+    return obs_proc
+
+# ------------------------------------------------------------------------
+# Main
 try:
     env = gym.make("CarlaBaseEnv-v0", config=configs[0])
     obs = env.reset()
@@ -35,7 +47,6 @@ try:
     plt.show()
 
     while True:
-
         # Calculate/Predict Actions
         t += 0.15
         s = 0.3 * np.sin(t)
@@ -49,18 +60,11 @@ try:
 
         # Make step in environment
         obs, reward, done, info = env.step(action)
-        obs_proc = Image.fromarray(obs, "RGB")
-        obs_proc.thumbnail((64,64), Image.ANTIALIAS)
-        imgplot = plt.imshow(obs_proc)
+        obs = preprocess_state(obs)
         #plt.draw()
         plt.pause(0.000001)
-        
-        #cv2.imshow("image", obs)
-        #cv2.waitKey(1)
-
         print(env._agents[0].state)
         
-
         # Reset if done
         if env._num_agents == 1 and done:
             env.reset()
@@ -68,7 +72,6 @@ try:
         elif env._num_agents > 1 and any(d for d in done.values()):
             env.reset()
             t = 0
-
 finally:
     env.close()
     print("-----Carla Environment is closed-----")

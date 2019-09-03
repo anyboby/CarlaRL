@@ -250,7 +250,14 @@ class BaseEnv(gym.Env):
 
     def _calculate_reward(self, agent):
         """Return the current reward"""
-        # TODO: Calculate reward based on agent's state
+        # Get all the agent-specific information
+        position = agent.state.position
+        print(position)
+
+        velocity = agent.state.velocity
+        collisions  = agent.state.collision
+
+
         reward = 0
         return reward
 

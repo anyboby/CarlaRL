@@ -6,6 +6,8 @@ import time
 import cv2
 from rl.random import OrnsteinUhlenbeckProcess
 import tensorflow as tf
+from matplotlib import pyplot as plt
+import numpy as np
 
 
 class DDPG:
@@ -25,7 +27,7 @@ class DDPG:
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(100000)
-        self.steps = 1200
+        self.steps = 200
         self.noise_decay = 0.999
 
     def policy_action(self, s):
@@ -82,13 +84,7 @@ class DDPG:
             time_step, cumul_reward, done = 0, 0, False
             old_state = env.reset()
             actions, states, rewards = [], [], []
-            noise = OrnsteinUhlenbeckProcess(size=self.action_size, theta=.15, mu=0., sigma=.3)
-
-            # Convert to grayscale
-            old_state = cv2.resize(old_state, (15, 15))
-            old_state = cv2.cvtColor(old_state, cv2.COLOR_BGR2GRAY)
-            old_state = old_state.reshape(old_state.shape[0], old_state.shape[1] , 1)
-
+            noise = OrnsteinUhlenbeckProcess(size=self.action_size, theta=.15, mu=0, sigma=.3)
 
             for step in range(self.steps):
                 if render:
@@ -96,24 +92,17 @@ class DDPG:
                 # Actor picks an action (following the deterministic policy)
                 a = self.policy_action(old_state)
                 noise_sample = noise.sample() * self.noise_decay
-                #a = np.clip(a+noise_sample, -1, 1)
+                a = np.clip(a+noise_sample, -1, 1)
                 # scaling the acc and brake
-                if step % 500 == 0 and step != 0:
-                    print("Action sample: {} with decay: {:.4f} and {}".format(a, self.noise_decay, noise_sample))
+                if step % 500 == 0:
+                    print("Action sample: {} with decay: {:.4f} and noise {}".format(a, self.noise_decay, noise_sample))
                 new_state, r, done, _ = env.step(a)
+                plt.ion()
+                plt.show()
+                plt.imshow(new_state, interpolation='nearest')
+                plt.draw()
+                plt.pause(1e-6)
 
-                # Reshape new state
-                new_state = cv2.resize(new_state, (15, 15))
-                new_state = cv2.cvtColor(new_state, cv2.COLOR_BGR2GRAY)
-                new_state = new_state.reshape(new_state.shape[0], new_state.shape[1], 1)
-
-                # Remove unused information (differences in grey scale)
-                for val in new_state:
-                    for val1 in val:
-                        if val1[0] > 140:
-                            val1[0] = 255
-
-                cv2.imshow('Car Racing', new_state)
 
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)

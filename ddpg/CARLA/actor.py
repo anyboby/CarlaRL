@@ -51,9 +51,8 @@ class Actor:
         
         # Defining the output for each dimension seperately
         steering = Dense(1,activation='tanh',kernel_initializer=RandomUniform(minval=-0.05,maxval=0.05))(x)   
-        acceleration = Dense(1,activation='sigmoid',kernel_initializer=RandomUniform(minval=-0.05,maxval=0.05))(x)   
-        brake = Dense(1,activation='sigmoid',kernel_initializer=RandomUniform(minval=-0.05,maxval=0.05))(x) 
-        out = concatenate([steering,acceleration,brake],axis=-1)
+        acceleration = Dense(1,activation='tanh',kernel_initializer=RandomUniform(minval=-0.05,maxval=0.05))(x)   
+        out = concatenate([steering,acceleration],axis=-1)
         
         model = Model(input=state,output=out)        
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))

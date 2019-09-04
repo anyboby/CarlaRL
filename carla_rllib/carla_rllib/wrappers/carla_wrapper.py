@@ -105,7 +105,7 @@ class BaseWrapper(object):
 
         # Set up sensors
         self._sensors.append(SegmentationSensor(self._vehicle,
-                                                width=840, height=840,
+                                                width=15, height=15,
                                                 orientation=[1.5, 50, -90, 0]))
         self._sensors.append(CollisionSensor(self._vehicle))
         self._sensors.append(LaneInvasionSensor(self._vehicle))
@@ -241,10 +241,7 @@ class BaseWrapper(object):
     def _is_terminal(self):
         """Check terminal conditions"""
         # TODO: Adjust terminal conditions
-        # UNCOMMENTED: 
-        # self.state.collision
-        # self.state.distance_to_center_line > 1.8
-        if (self.state.elapsed_ticks >= 1000):
+        if (self.state.collision):
             return True
         else:
             return False

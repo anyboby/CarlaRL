@@ -30,9 +30,9 @@ try:
     env = gym.make("CarlaBaseEnv-v0", config=configs[0])
     obs, reward, done, info = env.step([0,0])
     print(obs.shape)
-    ddpg = DDPG((50, 50, 3), 2, 10)
+    ddpg = DDPG((15, 15, 3), 2, 10)
     #ddpg.load_weights('_LR_0.0005_actor.h5', '_LR_0.0005_critic.h5')
-    ddpg.train(env, render=False, batch_size=64, nb_episodes=10000)
+    ddpg.train(env, render=True, batch_size=64, nb_episodes=10000)
 finally:
     env.close()
     print("-----Carla Environment is closed-----")

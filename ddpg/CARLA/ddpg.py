@@ -102,7 +102,7 @@ class DDPG:
                 plt.imshow(new_state, interpolation='nearest')
                 plt.draw()
                 plt.pause(1e-6)
-
+                print(r)
 
                 # Append to replay buffer
                 self.memorize(old_state, a, r, done, new_state)

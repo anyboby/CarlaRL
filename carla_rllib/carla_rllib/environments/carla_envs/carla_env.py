@@ -27,7 +27,6 @@ from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
 
-
 class BaseEnv(gym.Env):
 
     metadata = {
@@ -113,7 +112,7 @@ class BaseEnv(gym.Env):
             high = np.array([1.0, 1.0])
             self.action_space = Box(low, high, dtype=np.float32)
             self.observation_space = Box(low=0, high=255,
-                                         shape=(84, 84, 3),
+                                         shape=(50, 50, 3),
                                          dtype=np.uint8)
             print("Baseline support enabled")
         else:
@@ -195,6 +194,7 @@ class BaseEnv(gym.Env):
 
         # Retrieve observations, terminal and info
         obs_dict = self._get_obs()
+        obs_dict["Agent_1"] = self.preprocess(obs_dict["Agent_1"])
         done_dict = self._is_done()
         info_dict = self._get_info()
 
@@ -202,6 +202,11 @@ class BaseEnv(gym.Env):
             return obs_dict["Agent_1"], reward_dict["Agent_1"], done_dict["Agent_1"], info_dict["Agent_1"]
         else:
             return obs_dict, reward_dict, done_dict, info_dict
+
+    def preprocess(self, obs_arr):
+        return obs_arr
+
+
 
     def reset(self):
         """Reset the state of the environment and return initial observations
@@ -271,7 +276,7 @@ class BaseEnv(gym.Env):
         #self.velocity = velocity
 
         reward = -1
-        reward = reward + (velocity/10) - 30 * int(invasions_incr) - collision_penalty
+        reward = reward + velocity - 30 * int(invasions_incr) - collision_penalty
 
         return reward
 

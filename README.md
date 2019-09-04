@@ -61,3 +61,10 @@ alias source_carla="source ~/no_backup/carla_env/bin/activate"
 8. run CARLA_UE4.sh (or SDL_VIDEODRIVER=offscreen SDL_HINT_CUDA_DEVICE=0 sh CarlaUE4.sh )
 9. run wrapper test files (somewhere in carla_rllib/examples)
 	$ python carla_env_test.py 
+
+	
+
+# Notes
+- use tensorflow-gpu==1.11.0 for stable baselines
+- in carla config default render engine ?ndern
+-> r.TextureStreaming=True in Config

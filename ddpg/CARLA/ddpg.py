@@ -67,7 +67,26 @@ class DDPG:
         # Transfer weights to target networks at rate Tau
         self.actor.transfer_weights()
         self.critic.transfer_weights()
-        
+    
+    def preprocess_state(self, obs):
+
+        def rgb2gray(rgb, norm):
+            gray = np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+            if norm:
+                # normalize
+                gray = -1*(gray.astype("float32") / 128 - 1)
+            return gray
+
+        gray = rgb2gray(obs, True)    
+
+        #mask for road color
+        mask_r = abs(obs[:,:,0]-128)<5
+        mask_g = abs(obs[:,:,1]-64)<5
+        mask_b = abs(obs[:,:,2]-128)<5
+        mask = (mask_r*mask_g*mask_b)
+        masked_gray = np.zeros_like(gray)
+        masked_gray = np.ma.masked_where(mask==False, gray)    
+        return masked_gray
 
     def train(self, env, render, batch_size, nb_episodes):
         results = []
@@ -83,6 +102,10 @@ class DDPG:
             # Reset episode
             time_step, cumul_reward, done = 0, 0, False
             old_state = env.reset()
+            #old_state = self.preprocess_state(old_state)
+
+
+
             actions, states, rewards = [], [], []
             noise = OrnsteinUhlenbeckProcess(size=self.action_size, theta=.15, mu=0, sigma=.3)
 
@@ -97,6 +120,9 @@ class DDPG:
                 if step % 500 == 0:
                     print("Action sample: {} with decay: {:.4f} and noise {}".format(a, self.noise_decay, noise_sample))
                 new_state, r, done, _ = env.step(a)
+
+                #new_state = self.preprocess_state(new_state)
+
                 plt.ion()
                 plt.show()
                 plt.imshow(new_state, interpolation='nearest')

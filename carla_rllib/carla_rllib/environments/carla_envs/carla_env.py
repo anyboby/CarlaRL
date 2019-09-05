@@ -10,6 +10,7 @@ Class:
 import sys
 import os
 import glob
+import time
 try:
     sys.path.append(glob.glob('%s/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
         os.environ["CARLA_ROOT"],
@@ -26,6 +27,8 @@ from pygame.locals import K_ESCAPE
 from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
+from matplotlib import pyplot as plt
+import cv2
 
 class BaseEnv(gym.Env):
 
@@ -45,6 +48,8 @@ class BaseEnv(gym.Env):
         self._port = config.port
         self._map = config.map
         self._num_agents = config.num_agents
+        self._obs_shape = (80,80,1)
+        self._cum_reward = 0
 
         # Declare remaining variables
         self.frame = None
@@ -112,7 +117,7 @@ class BaseEnv(gym.Env):
             high = np.array([1.0, 1.0])
             self.action_space = Box(low, high, dtype=np.float32)
             self.observation_space = Box(low=0, high=255,
-                                         shape=(50, 50, 3),
+                                         shape=self._obs_shape,
                                          dtype=np.uint8)
             print("Baseline support enabled")
         else:
@@ -192,9 +197,13 @@ class BaseEnv(gym.Env):
             if done:
                 break
 
+        
+        self._cum_reward = self._cum_reward + reward_dict["Agent_1"]
+        if  (self.frame - self.start_frame) == 1:
+            print("Epsiode reward: ", self._cum_reward)
+            self._cum_reward = 0
         # Retrieve observations, terminal and info
         obs_dict = self._get_obs()
-        obs_dict["Agent_1"] = self.preprocess(obs_dict["Agent_1"])
         done_dict = self._is_done()
         info_dict = self._get_info()
 
@@ -254,7 +263,9 @@ class BaseEnv(gym.Env):
         obs_dict = dict()
         for agent in self._agents:
             obs_dict[agent.id] = agent.state.image
-
+        obs_dict["Agent_1"] = cv2.resize(obs_dict["Agent_1"], (self._obs_shape[0],self._obs_shape[1]))
+        obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
+        obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
         return obs_dict
 
     def _calculate_reward(self, agent):
@@ -266,16 +277,14 @@ class BaseEnv(gym.Env):
         
         # Calculate temporal differences
         invasions_incr = lane_invasion - self.lane_invasion
-        #velocity_incr = velocity - self.velocity
         collision_penalty = 0
         if collisions == True:
             collision_penalty = 100
 
         # Update values
         self.lane_invasion = lane_invasion
-        #self.velocity = velocity
 
-        reward = -1
+        reward = -0.1
         reward = reward + velocity - 30 * int(invasions_incr) - collision_penalty
 
         return reward

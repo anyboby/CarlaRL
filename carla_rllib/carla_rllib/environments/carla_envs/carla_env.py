@@ -263,8 +263,17 @@ class BaseEnv(gym.Env):
         obs_dict = dict()
         for agent in self._agents:
             obs_dict[agent.id] = agent.state.image
+        
         obs_dict["Agent_1"] = cv2.resize(obs_dict["Agent_1"], (self._obs_shape[0],self._obs_shape[1]))
         obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
+
+        # PLOTTING - Be careful, this is slow!
+        # plt.ion()
+        # plt.show()
+        # plt.imshow(obs_dict["Agent_1"], cmap="gray")
+        # plt.draw()
+        # plt.pause(1e-6)
+
         obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
         return obs_dict
 
@@ -285,8 +294,7 @@ class BaseEnv(gym.Env):
         self.lane_invasion = lane_invasion
 
         reward = -0.1
-        reward = reward + velocity - 30 * int(invasions_incr) - collision_penalty
-
+        reward = reward + 10 * velocity - 30 * int(invasions_incr) - collision_penalty
         return reward
 
     def _is_done(self):

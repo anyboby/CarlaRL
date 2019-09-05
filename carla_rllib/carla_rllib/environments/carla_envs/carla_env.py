@@ -294,7 +294,7 @@ class BaseEnv(gym.Env):
         self.lane_invasion = lane_invasion
 
         reward = -0.1
-        reward = reward + 10 * velocity - 30 * int(invasions_incr) - collision_penalty
+        reward = reward + velocity - 50 * int(invasions_incr) - collision_penalty
         return reward
 
     def _is_done(self):

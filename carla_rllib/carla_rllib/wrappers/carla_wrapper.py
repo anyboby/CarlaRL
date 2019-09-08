@@ -24,7 +24,7 @@ import pygame
 import queue
 import numpy as np
 import argparse
-from carla_rllib.wrappers.sensors import SegmentationSensor, CollisionSensor, LaneInvasionSensor, RenderCamera
+from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, CollisionSensor, LaneInvasionSensor, RenderCamera
 from carla_rllib.wrappers.states import BaseState
 
 
@@ -104,9 +104,10 @@ class BaseWrapper(object):
         self._carla_id = self._vehicle.id
 
         # Set up sensors
-        self._sensors.append(SegmentationSensor(self._vehicle,
+        self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=800, height=800,
                                                 orientation=[0, 40, -90, 0]))
+
         self._sensors.append(CollisionSensor(self._vehicle))
         self._sensors.append(LaneInvasionSensor(self._vehicle))
 

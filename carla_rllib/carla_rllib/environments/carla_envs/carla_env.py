@@ -91,17 +91,21 @@ class BaseEnv(gym.Env):
 
         # Create Agent(s)
         self._agents = []
-        spawn_points = self.world.get_map().get_spawn_points()[
-            :self._num_agents]
+        spawn_points = self.world.get_map().get_spawn_points()#[
+            #:self._num_agents]
+        print ("spawn points: " +str(spawn_points))
         if self._agent_type == "continuous":
             for n in range(self._num_agents):
+                # self._agents.append(ContinuousWrapper(self.world,
+                #                                       spawn_points[n],
+                #                                       self._render_enabled))
                 self._agents.append(ContinuousWrapper(self.world,
-                                                      spawn_points[n],
+                                                      spawn_points[3],
                                                       self._render_enabled))
         elif self._agent_type == "discrete":
             for n in range(self._num_agents):
                 self._agents.append(DiscreteWrapper(self.world,
-                                                    spawn_points[n],
+                                                    spawn_points[n+1],
                                                     self._render_enabled))
             else:
                 raise ValueError(
@@ -263,9 +267,12 @@ class BaseEnv(gym.Env):
         obs_dict = dict()
         for agent in self._agents:
             obs_dict[agent.id] = agent.state.image
+            obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
+
         
-        obs_dict["Agent_1"] = cv2.resize(obs_dict["Agent_1"], (self._obs_shape[0],self._obs_shape[1]))
-        obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
+        #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
+        cv2.imshow("image", obs_dict["Agent_1"])
+        cv2.waitKey(1)
 
         # PLOTTING - Be careful, this is slow!
         # plt.ion()
@@ -320,8 +327,11 @@ class BaseEnv(gym.Env):
         adjust wrapper reset function if necessary
         """
         if self._agent_type == "continuous":
+            #reset = dict()
+            for agent in self._agents:
+                pos = agent._vehicle.get_location()
             reset = dict(
-                Agent_1=dict(position=(46.1, 208.9),
+                Agent_1=dict(position=(pos.x, pos.y),
                              yaw=0,
                              steer=0,
                              acceleration=-1.0),

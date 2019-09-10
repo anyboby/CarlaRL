@@ -30,13 +30,13 @@ def get_actor_display_name(actor, truncate=250):
 
 class RgbSensor(object):
     def __init__(self, parent_actor, width=84, height=84,
-                 orientation=[-5.5, 2.8, -15, 0]):
+                 orientation=[-5.5, 2.8, -15, 0], id="default"):
         self.sensor = None
         self._parent = parent_actor
         self._width = width
         self._height = height
         self._queue = queue.Queue()
-
+        self._id = id
         # Initialize Sensor and start to listen
         world = self._parent.get_world()
         bp = world.get_blueprint_library().find('sensor.camera.rgb')
@@ -66,12 +66,13 @@ class RgbSensor(object):
 
 class SegmentationSensor(object):
     def __init__(self, parent_actor, width=84, height=84,
-                 orientation=[-5.5, 2.8, -15, 0], palette='citypalette'):
+                 orientation=[-5.5, 2.8, -15, 0], palette='citypalette', id="default"):
         self.sensor = None
         self._parent = parent_actor
         self._width = width
         self._height = height
         self._queue = queue.Queue()
+        self._id = id
 
         if palette == 'citypalette':
             self.spec = cc.CityScapesPalette
@@ -104,7 +105,9 @@ class SegmentationSensor(object):
         array = array[:, :, ::-1]
         return array
 
-
+"""
+this ss sensor has a custom preprocessing 
+"""
 class SegmentationSensorCustom(SegmentationSensor):
     # @TODO Moritz, hier segmenetation daten anpassen
     def _preprocess_data(self, image):

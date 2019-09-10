@@ -24,7 +24,7 @@ import pygame
 import queue
 import numpy as np
 import argparse
-from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, CollisionSensor, LaneInvasionSensor, RenderCamera
+from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, RgbSensor, CollisionSensor, LaneInvasionSensor, RenderCamera
 from carla_rllib.wrappers.states import BaseState
 
 
@@ -107,6 +107,7 @@ class BaseWrapper(object):
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=800, height=800,
                                                 orientation=[0, 40, -90, 0]))
+
 
         self._sensors.append(CollisionSensor(self._vehicle))
         self._sensors.append(LaneInvasionSensor(self._vehicle))
@@ -271,9 +272,35 @@ class BaseWrapper(object):
 
 
 class ContinuousWrapper(BaseWrapper):
+    def _start(self, spawn_point, actor_model=None, actor_name=None):
+        """Spawn actor and initialize sensors"""
+        # Get (random) blueprint
+        if actor_model:
+            blueprint = self._world.get_blueprint_library().find(actor_model)
+        else:
+            blueprint = np.random.choice(
+                self._world.get_blueprint_library().filter("vehicle.*"))
+        if actor_name:
+            blueprint.set_attribute('role_name', actor_name)
+        if blueprint.has_attribute('color'):
+            color = np.random.choice(
+                blueprint.get_attribute('color').recommended_values)
+            blueprint.set_attribute('color', color)
+        if blueprint.has_attribute('is_invincible'):
+            blueprint.set_attribute('is_invincible', 'true')
 
-    def __init__(self, world, spawn_point, render=False):
-        super(ContinuousWrapper, self).__init__(world, spawn_point, render)
+        # Spawn vehicle
+        self._vehicle = self._world.spawn_actor(blueprint, spawn_point)
+        self._carla_id = self._vehicle.id
+
+        # Set up sensors
+        self._sensors.append(SegmentationSensorCustom(self._vehicle,
+                                                width=800, height=800,
+                                                orientation=[0, 40, -90, 0]))
+
+
+        self._sensors.append(CollisionSensor(self._vehicle))
+        self._sensors.append(LaneInvasionSensor(self._vehicle))
 
     def step(self, action):
         """Apply steering and throttle/brake control
@@ -336,6 +363,35 @@ class ContinuousWrapper(BaseWrapper):
         # Enable simulation physics if disabled
         if not self._simulate_physics:
             self._togglePhysics()
+
+
+class DataGeneratorWrapper(ContinuousWrapper):
+
+    def _start(self, spawn_point, actor_model=None, actor_name=None):
+        super(DataGeneratorWrapper, self)._start(spawn_point)
+        # Set up sensors
+        self._sensors.append(SegmentationSensor(self._vehicle,
+                                                width=200, height=300,
+                                                orientation=[0, 90, -90, 0]), id="TopSS")
+
+        self._sensors.append(RgbSensor(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 2, -10, 0], id="FrontRGB"))
+
+        self._sensors.append(RgbSensor(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 2, -10, -45], id="LeftRGB"))
+
+        self._sensors.append(RgbSensor(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 2, -10, 45], id="RightRGB"))
+
+        self._sensors.append(RgbSensor(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 2, -10, 180], id="RearRGB"))
+
+        self._sensors.append(CollisionSensor(self._vehicle))
+        self._sensors.append(LaneInvasionSensor(self._vehicle))
 
 
 class DiscreteWrapper(BaseWrapper):

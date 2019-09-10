@@ -91,21 +91,16 @@ class BaseEnv(gym.Env):
 
         # Create Agent(s)
         self._agents = []
-        spawn_points = self.world.get_map().get_spawn_points()#[
-            #:self._num_agents]
-        print ("spawn points: " +str(spawn_points))
+        spawn_points = self.world.get_map().get_spawn_points() #commented by @Moritz [:self._num_agents]
         if self._agent_type == "continuous":
             for n in range(self._num_agents):
-                # self._agents.append(ContinuousWrapper(self.world,
-                #                                       spawn_points[n],
-                #                                       self._render_enabled))
                 self._agents.append(ContinuousWrapper(self.world,
-                                                      spawn_points[3],
+                                                      spawn_points[n],
                                                       self._render_enabled))
         elif self._agent_type == "discrete":
             for n in range(self._num_agents):
                 self._agents.append(DiscreteWrapper(self.world,
-                                                    spawn_points[n+1],
+                                                    spawn_points[n],
                                                     self._render_enabled))
             else:
                 raise ValueError(
@@ -267,8 +262,9 @@ class BaseEnv(gym.Env):
         obs_dict = dict()
         for agent in self._agents:
             obs_dict[agent.id] = agent.state.image
+            print ("image shape: " + str(agent.state.image.shape()))
             obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
-
+            print("after resize: " + str(obs_dict[agent.id].shape()))
         
         #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
         cv2.imshow("image", obs_dict["Agent_1"])
@@ -282,6 +278,7 @@ class BaseEnv(gym.Env):
         # plt.pause(1e-6)
 
         obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
+        print("after reshape: " + str(obs_dict[agent.id].shape()))
         return obs_dict
 
     def _calculate_reward(self, agent):
@@ -328,29 +325,43 @@ class BaseEnv(gym.Env):
         """
         if self._agent_type == "continuous":
             #reset = dict()
-            for agent in self._agents:
-                pos = agent._vehicle.get_location()
-            reset = dict(
-                Agent_1=dict(position=(pos.x, pos.y),
-                             yaw=0,
-                             steer=0,
-                             acceleration=-1.0),
-                Agent_2=dict(position=(56.1, 208.9),
-                             yaw=0,
+            reset = dict()
+            for any_agent in self._agents:
+                pos = any_agent._vehicle.get_location()
+                reset[any_agent.id]=dict(position=(pos.x, pos.y),
+                             yaw=90,
                              steer=0,
                              acceleration=-1.0)
-            )
+            # commented by @Moritz 
+            # reset = dict(
+            #     Agent_1=dict(position=(pos.x, pos.y),
+            #                  yaw=0,
+            #                  steer=0,
+            #                  acceleration=-1.0),
+            #     Agent_2=dict(position=(56.1, 208.9),
+            #                  yaw=0,
+            #                  steer=0,
+            #                  acceleration=-1.0)
+            # )
         else:
-            reset = dict(
-                Agent_1=dict(position=(0, 0),
+            reset = dict()
+            for any_agent in self._agents:
+                pos = any_agent._vehicle.get_location()
+                reset[any_agent.id]=dict(position=(pos.x, pos.y),
                              yaw=0,
-                             velocity=(1, 0),
-                             acceleration=(0, 0)),
-                Agent_2=dict(position=(-10, 0),
-                             yaw=0,
-                             velocity=(1, 0),
-                             acceleration=(0, 0))
-            )
+                             velocity=(1,0),
+                             acceleration=(0,0))
+            # commented by  @Moritz
+            # reset = dict(
+            #     Agent_1=dict(position=(0, 0),
+            #                  yaw=0,
+            #                  velocity=(1, 0),
+            #                  acceleration=(0, 0)),
+            #     Agent_2=dict(position=(-10, 0),
+            #                  yaw=0,
+            #                  velocity=(1, 0),
+            #                  acceleration=(0, 0))
+            # )
         return reset[agent.id]
 
     def set_phase(self):

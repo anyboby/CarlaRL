@@ -27,8 +27,10 @@ from pygame.locals import K_ESCAPE
 from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
+from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
 from matplotlib import pyplot as plt
 import cv2
+import random
 
 class BaseEnv(gym.Env):
 
@@ -51,9 +53,12 @@ class BaseEnv(gym.Env):
         self._obs_shape = (80,80,1)
         self._cum_reward = 0
 
+        # only for data generation runs, didn't find good other place to put it
+        self._data_gen = False
+
         # Declare remaining variables
         self.frame = None
-        self.timeout = 2.0
+        self.timeout = 100.0
 
         # Memory for reward functions
         self.velocity = 0
@@ -92,19 +97,37 @@ class BaseEnv(gym.Env):
         # Create Agent(s)
         self._agents = []
         spawn_points = self.world.get_map().get_spawn_points() #commented by @Moritz [:self._num_agents]
-        if self._agent_type == "continuous":
+        n_spawnpoints = len(spawn_points)
+        if self._data_gen:
+            # prefer out of town spawn spots
+            spawn_ind = random.randint(0,n_spawnpoints)
+            while (abs(spawn_points[spawn_ind].location.x) + abs(spawn_points[spawn_ind].location.y)) < 150:
+                spawn_ind = random.randint(0,n_spawnpoints)
+                print(spawn_points[spawn_ind])
+            for n in range(self._num_agents):
+                self._agents.append(DataGeneratorWrapper(self.world,
+                                                         spawn_points[spawn_ind],
+                                                         self._render_enabled))
+
+        elif self._agent_type == "continuous":
             for n in range(self._num_agents):
                 self._agents.append(ContinuousWrapper(self.world,
-                                                      spawn_points[n],
+                                                      spawn_points[random.randint(0,n_spawnpoints)],
                                                       self._render_enabled))
+                
         elif self._agent_type == "discrete":
             for n in range(self._num_agents):
                 self._agents.append(DiscreteWrapper(self.world,
-                                                    spawn_points[n],
+                                                    spawn_points[random.randint(0,n_spawnpoints)],
                                                     self._render_enabled))
+
+
             else:
                 raise ValueError(
                     "Agent type not available. Adjust config and choose one from: ['continuous', 'discrete']")
+
+
+
 
         # Baseline support
         self.action_space = None
@@ -257,28 +280,42 @@ class BaseEnv(gym.Env):
         ---Note---
         Pull information out of state
         """
+        if self._data_gen:
+            obs_dict = dict()
+            for agent in self._agents:
+                obs_dict[agent.id] = agent.state.storage
+                for sensor_id in agent.state.storage:
+                    #print ("sensor id:" + str(sensor_id) + " image shape: " + str(agent.state.storage[sensor_id].shape))
+                    # print ("image shape: " + str(agent.state.image.shape()))
+                    # obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
+                    # print("after resize: " + str(obs_dict[agent.id].shape()))
+                    cv2.imshow(sensor_id, obs_dict[agent.id][sensor_id])
+                    cv2.waitKey(1)
 
-        # Extract observations for agents
-        obs_dict = dict()
-        for agent in self._agents:
-            obs_dict[agent.id] = agent.state.image
-            print ("image shape: " + str(agent.state.image.shape()))
-            obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
-            print("after resize: " + str(obs_dict[agent.id].shape()))
-        
-        #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
-        cv2.imshow("image", obs_dict["Agent_1"])
-        cv2.waitKey(1)
 
-        # PLOTTING - Be careful, this is slow!
-        # plt.ion()
-        # plt.show()
-        # plt.imshow(obs_dict["Agent_1"], cmap="gray")
-        # plt.draw()
-        # plt.pause(1e-6)
+        else:
+            # Extract observations for agents
+            obs_dict = dict()
+            for agent in self._agents:
+                obs_dict[agent.id] = agent.state.image
+                #print ("image shape: " + str(agent.state.image.shape))
+                obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
+                #print("after resize: " + str(obs_dict[agent.id].shape))
+            
+            #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
+            cv2.imshow("image", obs_dict["Agent_1"])
+            cv2.waitKey(1)
 
-        obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
-        print("after reshape: " + str(obs_dict[agent.id].shape()))
+            # PLOTTING - Be careful, this is slow!
+            # plt.ion()
+            # plt.show()
+            # plt.imshow(obs_dict["Agent_1"], cmap="gray")
+            # plt.draw()
+            # plt.pause(1e-6)
+
+            obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
+            #print("after reshape: " + str(obs_dict[agent.id].shape))
+
         return obs_dict
 
     def _calculate_reward(self, agent):
@@ -287,6 +324,7 @@ class BaseEnv(gym.Env):
         lane_invasion = agent.state.lane_invasion
         velocity = agent.state.velocity
         collisions  = agent.state.collision 
+        dist_to_middle_lane = agent.state.distance_to_center_line
         
         # Calculate temporal differences
         invasions_incr = lane_invasion - self.lane_invasion
@@ -298,7 +336,8 @@ class BaseEnv(gym.Env):
         self.lane_invasion = lane_invasion
 
         reward = -0.1
-        reward = reward + velocity - 50 * int(invasions_incr) - collision_penalty
+        # @MORITZ uncomment reward = reward + velocity - 50 * int(invasions_incr) - collision_penalty
+        reward = reward + velocity/3 -dist_to_middle_lane/5 - 25 * int(invasions_incr) - collision_penalty
         return reward
 
     def _is_done(self):
@@ -324,12 +363,15 @@ class BaseEnv(gym.Env):
         adjust wrapper reset function if necessary
         """
         if self._agent_type == "continuous":
-            #reset = dict()
             reset = dict()
             for any_agent in self._agents:
-                pos = any_agent._vehicle.get_location()
-                reset[any_agent.id]=dict(position=(pos.x, pos.y),
-                             yaw=90,
+                if self._map=="Town05": # replace with Town05 for manual position
+                    position = (51.1, 205.3)
+                else:
+                    pos = any_agent._vehicle.get_location()
+                    position = (pos.x, pos.y)
+                reset[any_agent.id]=dict(position=position,
+                             yaw=0,
                              steer=0,
                              acceleration=-1.0)
             # commented by @Moritz 
@@ -346,8 +388,12 @@ class BaseEnv(gym.Env):
         else:
             reset = dict()
             for any_agent in self._agents:
-                pos = any_agent._vehicle.get_location()
-                reset[any_agent.id]=dict(position=(pos.x, pos.y),
+                if self._map=="Town05":
+                    position = (56.1, 208.9)
+                else:
+                    pos = any_agent._vehicle.get_location()
+                    position = (pos.x, pos.y)
+                reset[any_agent.id]=dict(position=position,
                              yaw=0,
                              velocity=(1,0),
                              acceleration=(0,0))

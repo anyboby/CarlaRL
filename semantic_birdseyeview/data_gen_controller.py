@@ -10,6 +10,7 @@ from pygame.locals import K_UP
 from pygame.locals import K_DOWN
 from pygame.locals import K_LEFT
 from pygame.locals import K_RIGHT
+import time 
 
 if __name__ == "__main__": 
     argparser = argparse.ArgumentParser(
@@ -36,7 +37,8 @@ if __name__ == "__main__":
         steer_cache  = 0
         print("-----Carla Environment is running-----")
         y = 0
-        # import time
+        episodes = 0
+        frames = 0
         while True:
             milliseconds = clock.get_time()
             for event in pygame.event.get():
@@ -60,15 +62,23 @@ if __name__ == "__main__":
             
             action = [s, a]
             obs, reward, done, info = env.step(action)
-            clock.tick(5)
-            print(env._agents[0].state)
 
+
+            #print(env._agents[0].state)
+
+            frames += 1
+            clock.tick(200) #@MORITZ TODO reset to original 4 (but seems to be laggy)
+            #print(done)# = False
             y +=1
             if y%2 == 0:
-                print("reward",reward)
+                #print("reward",reward)
                 y = 0
-
+            if frames == 1000:
+                print ("1000 frames reached! ending episode")
+                done = True
             if done:
+                episodes +=1
+                print ("episode {} done".format(episodes))
                 env.reset()
 
     finally:

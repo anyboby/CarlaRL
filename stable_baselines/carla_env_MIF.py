@@ -46,6 +46,7 @@ try:
     plt.show()
 
     while True:
+
         # ------------------------------------------------------------------------
         # Stable baselines
         if MODE == "DDPG":
@@ -81,10 +82,10 @@ try:
                 obs, rewards, dones, info = env.step(action)
                 env.render()
         if MODE == "SAC":
+
             from stable_baselines.sac.policies import CnnPolicy
             from stable_baselines.common.vec_env import DummyVecEnv
             from stable_baselines import SAC
-
             env = DummyVecEnv([lambda: env])
             model = SAC(CnnPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/")
             # When one episode has 1000 steps the paremter means = 50 episodes
@@ -93,6 +94,7 @@ try:
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)
+                #print(action)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
 

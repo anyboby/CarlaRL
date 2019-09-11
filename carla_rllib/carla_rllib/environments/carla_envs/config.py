@@ -6,6 +6,7 @@ class BaseConfig(object):
         if config:
             self.parse(config)
 
+
     def parse(self, config):
         self.agent_type = config["agent_type"]
         self.frame_skip = config["frame_skip"]

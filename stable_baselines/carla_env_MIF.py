@@ -9,6 +9,7 @@ import matplotlib.image as mpimg
 from PIL import Image
 from carla_rllib.environments.carla_envs.config import BaseConfig, parse_json
 from stable_baselines.common.vec_env import DummyVecEnv
+from stable_baselines.common.vec_env import VecFrameStack
 
 
 
@@ -55,12 +56,13 @@ try:
             from stable_baselines import DDPG
 
             env = DummyVecEnv([lambda: env])
+            env = VecFrameStack(env, n_stack=4)
             n_actions = env.action_space.shape[-1]
             param_noise = None
             action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.3) * np.ones(n_actions))
 
-            model = DDPG(CnnPolicy, env, verbose=1, param_noise=param_noise, action_noise=action_noise)
-            model.learn(total_timesteps=400000, tensorboard_log="./tensorboard_logs/")
+            model = DDPG(CnnPolicy, env, verbose=0, param_noise=param_noise, action_noise=action_noise, tensorboard_log="./tensorboard_logs/")
+            model.learn(total_timesteps=400000)
             model.save("carla_ddpg")
             obs = env.reset()
             while True:
@@ -69,14 +71,14 @@ try:
                 env.render()
         if MODE == "PPO": # Not working yet
             from stable_baselines.common.policies import CnnPolicy
-            from stable_baselines.common.vec_env import DummyVecEnv
-            from stable_baselines.common.vec_env import VecFrameStack
             from stable_baselines import PPO2
-
             env = DummyVecEnv([lambda: env])
             env = VecFrameStack(env, n_stack=4)
-            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/")
-            model.learn(total_timesteps=25000)
+            # Allow less clipping
+            # Increased learning rate
+            # Faster updates
+            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, n_steps=512, cliprange=0.1)
+            model.learn(total_timesteps=40000)
             model.save("carla_ppo")
             obs = env.reset()
             while True:
@@ -84,14 +86,13 @@ try:
                 obs, rewards, dones, info = env.step(action)
                 env.render()
         if MODE == "SAC":
-
             from stable_baselines.sac.policies import CnnPolicy
-            from stable_baselines.common.vec_env import DummyVecEnv
             from stable_baselines import SAC
+            env = VecFrameStack(env, n_stack=4)
             env = DummyVecEnv([lambda: env])
             model = SAC(CnnPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/")
             # When one episode has 1000 steps the paremter means = 50 episodes
-            model.learn(total_timesteps=50000, log_interval=10)
+            model.learn(total_timesteps=50000, log_interval=100)
             model.save("carla_sac")
             obs = env.reset()
             while True:
@@ -99,8 +100,6 @@ try:
                 #print(action)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
-
-
 finally:
     env.close()
     print("-----Carla Environment is closed-----")

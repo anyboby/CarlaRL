@@ -299,7 +299,7 @@ class ContinuousWrapper(BaseWrapper):
         # Set up sensors
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=1000, height=1000,
-                                                orientation=[0, 5, -15, 0]))
+                                                orientation=[0, 40, -90, 0]))
 
 
         self._sensors.append(CollisionSensor(self._vehicle))
@@ -498,7 +498,7 @@ class DataGeneratorWrapper(ContinuousWrapper):
         """Check terminal conditions"""
         # TODO: Adjust terminal conditions
         if (self.state.collision or
-            self.state.distance_to_center_line > 10     # @MORITZ TODO maybe uncomment back to 1.8
+            self.state.distance_to_center_line > 1.8     # @MORITZ TODO maybe uncomment back to 1.8
                 or self.state.elapsed_ticks >= 100000):   # @MORITZ TODO maybe uncomment back to 1000
             return True
         else:

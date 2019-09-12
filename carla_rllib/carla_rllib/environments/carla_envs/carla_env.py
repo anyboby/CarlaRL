@@ -65,6 +65,8 @@ class BaseEnv(gym.Env):
         self.lane_invasion = 0
         self.dist_to_middle_lane = 0
         self.MAX_DIST_MIDDLE_LANE = 1.8
+        self.MAX_VELOCITY = 40 # TODO: Find out
+        self.MAX_SPEED_LIMIT = 10
 
         # Initialize client and get/load map        
         try:
@@ -310,12 +312,12 @@ class BaseEnv(gym.Env):
 
             # PLOTTING - Be careful, this is slow!
             plot = False
-            if plot:
+            if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
                 plt.ion()
                 plt.show()
                 plt.imshow(obs_dict["Agent_1"], cmap="gray")
                 plt.draw()
-                plt.pause(2)
+                plt.pause(0.01)
 
             obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
             #print("after reshape: " + str(obs_dict[agent.id].shape))
@@ -338,15 +340,17 @@ class BaseEnv(gym.Env):
         dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 300
+            collision_penalty = 100
+        if velocity > self.MAX_SPEED_LIMIT:
+            velocity = self.MAX_SPEED_LIMIT
 
         # Update memory values
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
 
-
+        # If velocity has a too big weight, the agent will start speeding
         reward = -0.1
-        reward = reward + velocity / 3 - dist_to_middle_lane * 2 - collision_penalty
+        reward = reward + velocity / 5 - dist_to_middle_lane / 5 - collision_penalty - invasions_incr * velocity
         print(reward)
         return reward
 

@@ -31,8 +31,8 @@ print("-----Configuration-----")
 print(configs[0])
 # ------------------------------------------------------------------------
 # Mode
-# Select from: DDPG, PPO
-MODE = "SAC"
+# Select from: DDPG, PPO, SAC
+MODE = "PPO"
 
 # ------------------------------------------------------------------------
 # Main
@@ -61,21 +61,23 @@ try:
 
             model = DDPG(CnnPolicy, env, verbose=1, param_noise=param_noise, action_noise=action_noise)
             model.learn(total_timesteps=400000, tensorboard_log="./tensorboard_logs/")
-            model.save("carla_sac")
+            model.save("carla_ddpg")
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
         if MODE == "PPO": # Not working yet
-            from stable_baselines.common.policies import MlpPolicy
+            from stable_baselines.common.policies import CnnPolicy
             from stable_baselines.common.vec_env import DummyVecEnv
-            from stable_baselines import PPO1
+            from stable_baselines.common.vec_env import VecFrameStack
+            from stable_baselines import PPO2
 
             env = DummyVecEnv([lambda: env])
-            model = PPO1(MlpPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/")
+            env = VecFrameStack(env, n_stack=4)
+            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/")
             model.learn(total_timesteps=25000)
-            model.save("carla_sac")
+            model.save("carla_ppo")
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)

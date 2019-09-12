@@ -50,7 +50,7 @@ class BaseEnv(gym.Env):
         self._port = config.port
         self._map = config.map
         self._num_agents = config.num_agents
-        self._obs_shape = (80,80,1)
+        self._obs_shape = (64,64,1)
         self._cum_reward = 0
 
         # only for data generation runs, didn't find good other place to put it
@@ -63,6 +63,8 @@ class BaseEnv(gym.Env):
         # Memory for reward functions
         self.velocity = 0
         self.lane_invasion = 0
+        self.dist_to_middle_lane = 0
+        self.MAX_DIST_MIDDLE_LANE = 1.8
 
         # Initialize client and get/load map        
         try:
@@ -221,8 +223,8 @@ class BaseEnv(gym.Env):
 
         
         self._cum_reward = self._cum_reward + reward_dict["Agent_1"]
-        if  (self.frame - self.start_frame) == 1:
-            print("Epsiode reward: ", self._cum_reward)
+        if  (self.frame - self.start_frame) == 1 + self._frame_skip:
+            print("\033[94m ################ Epsiode reward: ", self._cum_reward, "############ \x1b[0m")
             self._cum_reward = 0
         # Retrieve observations, terminal and info
         obs_dict = self._get_obs()
@@ -303,15 +305,17 @@ class BaseEnv(gym.Env):
                 #print("after resize: " + str(obs_dict[agent.id].shape))
             
             #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
-            cv2.imshow("image", obs_dict["Agent_1"])
-            cv2.waitKey(1)
+            #cv2.imshow("image", obs_dict["Agent_1"])
+            #cv2.waitKey(1)
 
             # PLOTTING - Be careful, this is slow!
-            # plt.ion()
-            # plt.show()
-            # plt.imshow(obs_dict["Agent_1"], cmap="gray")
-            # plt.draw()
-            # plt.pause(1e-6)
+            plot = False
+            if plot:
+                plt.ion()
+                plt.show()
+                plt.imshow(obs_dict["Agent_1"], cmap="gray")
+                plt.draw()
+                plt.pause(2)
 
             obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
             #print("after reshape: " + str(obs_dict[agent.id].shape))
@@ -326,18 +330,24 @@ class BaseEnv(gym.Env):
         collisions  = agent.state.collision 
         dist_to_middle_lane = agent.state.distance_to_center_line
         
-        # Calculate temporal differences
+        # Calculate temporal differences and penalty values
         invasions_incr = lane_invasion - self.lane_invasion
+        # Hotfix because on collision this value is set negative
+        if invasions_incr < 0:
+            invasions_incr = 0
+        dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 100
+            collision_penalty = 300
 
-        # Update values
+        # Update memory values
         self.lane_invasion = lane_invasion
+        self.dist_to_middle_lane = dist_to_middle_lane
+
 
         reward = -0.1
-        # @MORITZ uncomment reward = reward + velocity - 50 * int(invasions_incr) - collision_penalty
-        reward = reward + velocity/3 -dist_to_middle_lane/5 - 25 * int(invasions_incr) - collision_penalty
+        reward = reward + velocity / 3 - dist_to_middle_lane * 2 - collision_penalty
+        print(reward)
         return reward
 
     def _is_done(self):

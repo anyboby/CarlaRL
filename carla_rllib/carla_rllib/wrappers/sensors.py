@@ -111,12 +111,14 @@ this ss sensor has a custom preprocessing
 class SegmentationSensorCustom(SegmentationSensor):
     # @TODO Moritz, hier segmenetation daten anpassen
     def _preprocess_data(self, image):
+        
         image.convert(self.spec)
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (image.height, image.width, 4))
         array = array[:, :, :3]
         array = array[:, :, ::-1]
 
+        """
         def rgb2gray(rgb, norm):
             gray = np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
             if norm:
@@ -141,6 +143,11 @@ class SegmentationSensorCustom(SegmentationSensor):
         #cv2.imshow("mask", mask)
         #cv2.waitKey(1)
 
+        """
+        # @Moritz: Funktioniert es so bei dir nicht auch? Ist doch einfacher?
+        # Schau dir mal die verschiedenen outputs an - welches findest du besser?
+        masked_gray = cv2.cvtColor(array, cv2.COLOR_RGB2GRAY) 
+        
         return masked_gray
 
 

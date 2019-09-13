@@ -4,7 +4,7 @@
     "delta_sec": 0.05,
     "sync_mode": true,
     "stable_baselines": true,
-    "render": false,
+    "render": true,
     "hosts": [
         "localhost"
     ],

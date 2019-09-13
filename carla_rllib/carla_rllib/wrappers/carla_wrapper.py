@@ -242,10 +242,10 @@ class BaseWrapper(object):
 
     def _is_terminal(self):
         """Check terminal conditions"""
-        # TODO: Adjust terminal conditions
+        # Note: distance to center line depends on the town!
+
         if (self.state.collision or
-            self.state.distance_to_center_line > 1.8    
-                or self.state.elapsed_ticks >= 1000):   
+            self.state.elapsed_ticks >= 5000):   
             return True
         else:
             return False
@@ -499,7 +499,7 @@ class DataGeneratorWrapper(ContinuousWrapper):
         # TODO: Adjust terminal conditions
         if (self.state.collision or
             self.state.distance_to_center_line > 1.8     # @MORITZ TODO maybe uncomment back to 1.8
-                or self.state.elapsed_ticks >= 100000):   # @MORITZ TODO maybe uncomment back to 1000
+                or self.state.elapsed_ticks >= 5000):   # @MORITZ TODO maybe uncomment back to 1000
             return True
         else:
             return False

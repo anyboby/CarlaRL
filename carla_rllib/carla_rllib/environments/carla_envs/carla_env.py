@@ -52,6 +52,11 @@ class BaseEnv(gym.Env):
         self._num_agents = config.num_agents
         self._obs_shape = (64,64,1)
         self._cum_reward = 0
+        self._prev_action = None
+        self._action = None
+        self._good_spawn_points = {  #Note: Town7 needs to be downloaded
+            "Town05" : (51.1, 205.3)
+        }
 
         # only for data generation runs, didn't find good other place to put it
         self._data_gen = False
@@ -112,8 +117,8 @@ class BaseEnv(gym.Env):
                 self._agents.append(DataGeneratorWrapper(self.world,
                                                          spawn_points[spawn_ind],
                                                          self._render_enabled))
-
         elif self._agent_type == "continuous":
+            # Good spawn points for training:
             for n in range(self._num_agents):
                 self._agents.append(ContinuousWrapper(self.world,
                                                       spawn_points[random.randint(0,n_spawnpoints)],
@@ -201,6 +206,7 @@ class BaseEnv(gym.Env):
                 contains auxiliary diagnostic information
         """
         # Set step and initialize reward_dict
+        self._action = action
         reward_dict = dict()
         for agent in self._agents:
             if self._num_agents == 1:
@@ -331,26 +337,27 @@ class BaseEnv(gym.Env):
         velocity = agent.state.velocity
         collisions  = agent.state.collision 
         dist_to_middle_lane = agent.state.distance_to_center_line
+        current_steering = self._action[0]
         
         # Calculate temporal differences and penalty values
         invasions_incr = lane_invasion - self.lane_invasion
+        steering_change = 0
+        if not self._prev_action is None:
+            steering_change = abs(current_steering - self._prev_action[0])
         # Hotfix because on collision this value is set negative
         if invasions_incr < 0:
             invasions_incr = 0
         dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 100
-        if velocity > self.MAX_SPEED_LIMIT:
-            velocity = self.MAX_SPEED_LIMIT
-
+            collision_penalty = 10
         # Update memory values
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
+        self._prev_action = self._action
 
-        # If velocity has a too big weight, the agent will start speeding
         reward = -0.1
-        reward = reward + velocity / 5 - dist_to_middle_lane / 5 - collision_penalty - invasions_incr * velocity
+        reward = reward + velocity * 0.2 - dist_to_middle_lane * 0.2 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
         print(reward)
         return reward
 
@@ -379,8 +386,10 @@ class BaseEnv(gym.Env):
         if self._agent_type == "continuous":
             reset = dict()
             for any_agent in self._agents:
-                if self._map=="Town05": # replace with Town05 for manual position
-                    position = (51.1, 205.3)
+
+
+                if self._map in self._good_spawn_points: 
+                    position = self._good_spawn_points[self._map]
                 else:
                     pos = any_agent._vehicle.get_location()
                     position = (pos.x, pos.y)

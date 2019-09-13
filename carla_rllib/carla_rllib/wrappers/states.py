@@ -18,6 +18,7 @@ class BaseState(object):
         self.opposite_lane = False
         self.junction = False
         self.collision = False
+        self.collisions = 0
         self.terminal = False
 
     def __repr__(self):
@@ -35,6 +36,7 @@ class BaseState(object):
                 "Opposite lane: %s\n" +
                 "Junction: %s\n" +
                 "Collision: %s\n" +
+                "Collisions: %s\n" +
                 "Terminal: %s") % (self.image.shape,
                                    self.elapsed_ticks,
                                    self.position,
@@ -49,4 +51,5 @@ class BaseState(object):
                                    self.opposite_lane,
                                    self.junction,
                                    self.collision,
+                                   self.collisions,
                                    self.terminal)

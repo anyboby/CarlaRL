@@ -18,6 +18,12 @@
 *.sublime-project
 *.sublime-workspace
 
+*camera_storage/
+*histories/
+*models/
+*movies/
+
+
 tensorboard_logs/
 logs/
 

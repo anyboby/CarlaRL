@@ -17,11 +17,30 @@ import math
 import collections
 import pygame
 import weakref
+import itertools
 from carla import ColorConverter as cc
 
 
 #tentatively
 import cv2
+
+# encoding of red channel for semantic segmentation classes, but traffic signs seem to be on 0 too ?
+TAG_ENCODING = {
+    0:0,
+    70:1,
+    153:2,
+    160:3,
+    60:4,
+    153:5,
+    50:6,
+    128:7,
+    232:8,
+    35:9,
+    142:10,
+    156:11,
+    0:12
+}
+
 
 def get_actor_display_name(actor, truncate=250):
     name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
@@ -114,34 +133,72 @@ class SegmentationSensorCustom(SegmentationSensor):
         image.convert(self.spec)
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
+        #array = array[:, :, ::-1]
+        array = array[...,0]
+        array = np.expand_dims(array, 3)
+        # array_copy = np.copy(array)
+        #array = [(x,y) for x,y in np.ndindex(array)]
+        # for i in range(array.shape[0]):
+        #     for j in range(array.shape[1]):
+        #         key = array[i][j][-1]
+        #         array_copy[i][j][0] = TAG_ENCODING[key]
+        # doubles = itertools.product(range(array.shape[0]),array.shape[1])
+        # for double in doubles:
+        #     array[double[0]][double[1]] = TAG_ENCODING[array[double[0]][double[1]]]
 
-        def rgb2gray(rgb, norm):
-            gray = np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
-            if norm:
-                # normalize
-                gray = -1*(gray.astype("float32") / 128 - 1)
-            return gray
+        # for i in range(array.shape[])
+        # array = array[:,:,TAG_ENCODING[r] for r in array[:][:][3]]
+        # array = array[:, :, ::-1]
 
-        gray_n = rgb2gray(array, True)    
+        ### -------- original preprocessing ---------- ###
+        # image.convert(self.spec)
+        # array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        # array = np.reshape(array, (image.height, image.width, 4))
+        # array = array[:, :, :3]
+        # array = array[:, :, ::-1]
+        ### -------------------------------------------- ###
 
-        #mask for road color
-        mask_r = abs(array[:,:,0]-128)<5
-        mask_g = abs(array[:,:,1]-64)<5
-        mask_b = abs(array[:,:,2]-128)<5
-        mask = 1.0*(mask_r*mask_g*mask_b)
 
-        #mask_color = 1*(mask, mask, mask)
-        #masked_gray = np.zeros_like(gray_n)
-        #masked_gray = np.ma.masked_where(mask==0, gray_n)    
-        masked_gray = mask*gray_n
-        #cv2.imshow("masked_gray", masked_gray)
-        #cv2.imshow("gray", gray_n)
-        #cv2.imshow("mask", mask)
-        #cv2.waitKey(1)
+        # def rgb2gray(rgb, norm):
+        #     gray = np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+        #     if norm:
+        #         # normalize
+        #         gray = -1*(gray.astype("float32") / 128 - 1)
+        #     return gray
 
-        return masked_gray
+        # gray_n = rgb2gray(array, True)    
+        # print("shape ! " + str(array.shape))
+        # #mask for road color
+        # mask_r = abs(array[:,:,0]-128)<5
+        # mask_g = abs(array[:,:,1]-64)<5
+        # mask_b = abs(array[:,:,2]-128)<5
+        # mask = 1.0*(mask_r*mask_g*mask_b)
+
+        # #mask_color = 1*(mask, mask, mask)
+        # #masked_gray = np.zeros_like(gray_n)
+        # #masked_gray = np.ma.masked_where(mask==0, gray_n)    
+        # masked_gray = mask*gray_n
+        # # cv2.imshow("masked_gray", masked_gray)
+        # #cv2.imshow("gray", gray_n)
+        # #cv2.imshow("mask", mask)
+        # # cv2.waitKey(1)
+
+        return array #masked_gray
+
+
+"""
+this ss sensor only returns r channel as class encodings 
+"""
+class SegmentationSensorTags(SegmentationSensor):
+    # @TODO Moritz, hier segmenetation daten anpassen
+    def _preprocess_data(self, image):
+        image.convert(self.spec)
+        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        array = np.reshape(array, (image.height, image.width, 4))
+        array = array[...,0]
+        array = np.expand_dims(array, 3)
+        return array 
+
 
 
 class LidarSensor(object):

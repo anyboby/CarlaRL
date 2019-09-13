@@ -51,8 +51,13 @@ class BaseEnv(gym.Env):
         self._port = config.port
         self._map = config.map
         self._num_agents = config.num_agents
-        self._obs_shape = (80,80,1)
+        self._obs_shape = (64,64,1)
         self._cum_reward = 0
+        self._prev_action = None
+        self._action = None
+        self._good_spawn_points = {  #Note: Town7 needs to be downloaded
+            "Town05" : (51.1, 205.3)
+        }
 
         # only for data generation runs, didn't find good other place to put it
         self._data_gen = True
@@ -64,6 +69,10 @@ class BaseEnv(gym.Env):
         # Memory for reward functions
         self.velocity = 0
         self.lane_invasion = 0
+        self.dist_to_middle_lane = 0
+        self.MAX_DIST_MIDDLE_LANE = 1.8
+        self.MAX_VELOCITY = 40 # TODO: Find out
+        self.MAX_SPEED_LIMIT = 10
 
         # Initialize client and get/load map        
         try:
@@ -104,8 +113,8 @@ class BaseEnv(gym.Env):
                 self._agents.append(DataGeneratorWrapper(self.world,
                                                          self.spawnPointGenerator(self.spawn_points),
                                                          self._render_enabled))
-
         elif self._agent_type == "continuous":
+            # Good spawn points for training:
             for n in range(self._num_agents):
                 self._agents.append(ContinuousWrapper(self.world,
                                                       self.spawn_points[random.randint(0,len(self.spawn_points))],
@@ -193,6 +202,7 @@ class BaseEnv(gym.Env):
                 contains auxiliary diagnostic information
         """
         # Set step and initialize reward_dict
+        self._action = action
         reward_dict = dict()
         for agent in self._agents:
             if self._num_agents == 1:
@@ -217,8 +227,8 @@ class BaseEnv(gym.Env):
 
         
         self._cum_reward = self._cum_reward + reward_dict["Agent_1"]
-        if  (self.frame - self.start_frame) == 1:
-            print("Epsiode reward: ", self._cum_reward)
+        if  (self.frame - self.start_frame) == 1 + self._frame_skip:
+            print("\033[94m ################ Epsiode reward: ", self._cum_reward, "############ \x1b[0m")
             self._cum_reward = 0
         # Retrieve observations, terminal and info
         obs_dict = self._get_obs()
@@ -301,15 +311,17 @@ class BaseEnv(gym.Env):
                 #print("after resize: " + str(obs_dict[agent.id].shape))
             
             #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
-            cv2.imshow("image", obs_dict["Agent_1"])
-            cv2.waitKey(1)
+            #cv2.imshow("image", obs_dict["Agent_1"])
+            #cv2.waitKey(1)
 
             # PLOTTING - Be careful, this is slow!
-            # plt.ion()
-            # plt.show()
-            # plt.imshow(obs_dict["Agent_1"], cmap="gray")
-            # plt.draw()
-            # plt.pause(1e-6)
+            plot = False
+            if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
+                plt.ion()
+                plt.show()
+                plt.imshow(obs_dict["Agent_1"], cmap="gray")
+                plt.draw()
+                plt.pause(0.01)
 
             obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
             #print("after reshape: " + str(obs_dict[agent.id].shape))
@@ -323,20 +335,28 @@ class BaseEnv(gym.Env):
         velocity = agent.state.velocity
         collisions  = agent.state.collision 
         dist_to_middle_lane = agent.state.distance_to_center_line
+        current_steering = self._action[0]
         
-        # Calculate temporal differences
+        # Calculate temporal differences and penalty values
         invasions_incr = lane_invasion - self.lane_invasion
+        steering_change = 0
+        if not self._prev_action is None:
+            steering_change = abs(current_steering - self._prev_action[0])
+        # Hotfix because on collision this value is set negative
+        if invasions_incr < 0:
+            invasions_incr = 0
+        dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 100
-
-        # Update values
+            collision_penalty = 10
+        # Update memory values
         self.lane_invasion = lane_invasion
+        self.dist_to_middle_lane = dist_to_middle_lane
+        self._prev_action = self._action
 
-        #reward = -0.1
-        # @MORITZ uncomment reward = reward + velocity - 50 * int(invasions_incr) - collision_penalty
-        #reward = reward + velocity/3 -dist_to_middle_lane/5 - 25 * int(invasions_incr) - collision_penalty
-        reward = velocity# - collision_penalty/10
+        reward = -0.1
+        reward = reward + velocity * 0.2 - dist_to_middle_lane * 0.2 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
+        print(reward)
         return reward
 
     def _is_done(self):
@@ -364,11 +384,16 @@ class BaseEnv(gym.Env):
         if self._agent_type == "continuous":
             reset = dict()
             for any_agent in self._agents:
-                if self._data_gen:
-                    position = (self.spawnPointGeneratorTown5().location.x,
-                                self.spawnPointGeneratorTown5().location.y)
-                elif self._map=="Town05": # replace with Town05 for manual position
-                    position = (51.1, 205.3)
+                # @git from Moritz
+                # if self._data_gen:
+                #     position = (self.spawnPointGeneratorTown5().location.x,
+                #                 self.spawnPointGeneratorTown5().location.y)
+                # elif self._map=="Town05": # replace with Town05 for manual position
+                #     position = (51.1, 205.3)
+
+                # @git from Flo
+                if self._map in self._good_spawn_points: 
+                    position = self._good_spawn_points[self._map]
                 else:
                     pos = any_agent._vehicle.get_location()
                     position = (pos.x, pos.y)

@@ -130,6 +130,7 @@ this ss sensor has a custom preprocessing
 class SegmentationSensorCustom(SegmentationSensor):
     # @TODO Moritz, hier segmenetation daten anpassen
     def _preprocess_data(self, image):
+        
         image.convert(self.spec)
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (image.height, image.width, 4))

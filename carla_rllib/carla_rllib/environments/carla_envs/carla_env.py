@@ -381,7 +381,7 @@ class BaseEnv(gym.Env):
         self._prev_action = self._action
 
         reward = -0.1
-        reward = reward + velocity * 0.2 - dist_to_middle_lane * 0.2 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
+        reward = reward + velocity * 0.1 - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.3 #- invasions_incr * velocity
         #print(reward)
         return reward
 

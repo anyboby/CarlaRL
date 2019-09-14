@@ -31,7 +31,7 @@ set_session(sess) # set this TensorFlow session as the default session for Keras
 
 from keras.models import load_model
 
-model_filename = "models/multi_model__sweep=11_decimation=2_numclasses=3_valloss=0.288.h5"
+model_filename = "models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
 multi_model = load_model(model_filename)
 multi_model.summary()
 racetrack = "Town05"

@@ -23,10 +23,12 @@ from carla import ColorConverter as cc
 import pygame
 import queue
 import numpy as np
+from math import floor, ceil
 import argparse
 from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, SegmentationSensorTags, RgbSensor, CollisionSensor, LaneInvasionSensor, RenderCamera
 from carla_rllib.wrappers.states import BaseState
-
+from keras.models import load_model
+from keras.models import Model
 
 VEHICLE_MODELS = ['vehicle.audi.a2',
                   'vehicle.audi.tt',
@@ -53,8 +55,55 @@ VEHICLE_MODELS = ['vehicle.audi.a2',
                   'vehicle.chevrolet.impala',
                   'vehicle.mini.cooperst']
 
+
+CLASSES_NAMES = [
+    ['Roads', 'RoadLines'],
+    
+    ['None', 'Buildings', 'Fences', 'Other', 'Pedestrians',
+     'Poles', 'Walls', 'TrafficSigns',
+     'Vegetation', 'Sidewalks'],
+    
+    ['Vehicles'],
+]
+
+LABELS = {
+    0: 'None',
+    70: 'Buildings',
+    152: 'Fences',      # this one doesnt exist
+    160: 'Other',
+    60: 'Pedestrians',
+    153: 'Poles',
+    50: 'RoadLines',
+    128: 'Roads',
+    232: 'Sidewalks',
+    35: 'Vegetation',
+    142: 'Vehicles',
+    156: 'Walls',
+    1: 'TrafficSigns',  # this one doesnt exist
+}
+
+REVERSE_LABELS = dict(zip(LABELS.values(), LABELS.keys()))
+
+def class_names_to_class_numbers(class_names):
+    return [
+        [REVERSE_LABELS[c] for c in classes]
+        for classes in class_names
+    ]
+
+
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
+
+
+## --------------- allow dynamic memory growth to avoid cudnn init error ------------- ##
+from keras.backend.tensorflow_backend import set_session #---------------------------- ##
+import tensorflow as tf #------------------------------------------------------------- ##
+config = tf.ConfigProto() #----------------------------------------------------------- ##
+config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU- ##
+#config.log_device_placement = True  # to log device placement ----------------------- ##
+sess = tf.Session(config=config) #---------------------------------------------------- ##
+set_session(sess) # set this TensorFlow session as the default session for Keras ----- ##
+## ----------------------------------------------------------------------------------- ##
 
 
 class BaseWrapper(object):
@@ -73,6 +122,7 @@ class BaseWrapper(object):
         self._render_enabled = render
         self.state = BaseState()
         self._simulate_physics = True
+
 
         self._start(spawn_point, VEHICLE_MODELS[1], self.id)
         if self._render_enabled:
@@ -325,6 +375,7 @@ class ContinuousWrapper(BaseWrapper):
             control.throttle = 0
             control.brake = -float(action[1])
         self._vehicle.apply_control(control)
+        
 
     def reset(self, reset):
         """Reset position and controls as well as sensors and state
@@ -368,6 +419,180 @@ class ContinuousWrapper(BaseWrapper):
         # Enable simulation physics if disabled
         if not self._simulate_physics:
             self._togglePhysics()
+
+
+class BirdsEyeWrapper(ContinuousWrapper):
+    def __init__(self, world, spawn_point, render=False):
+        super(BirdsEyeWrapper, self).__init__(world, spawn_point, render=render)
+        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        # model_filename = "./././semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        self.ae = load_model(model_filename)
+        self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
+                              outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
+
+    def _start(self, spawn_point, actor_model=None, actor_name=None):
+        """Spawn actor and initialize sensors"""
+        # Get (random) blueprint
+        if actor_model:
+            blueprint = self._world.get_blueprint_library().find(actor_model)
+        else:
+            blueprint = np.random.choice(
+                self._world.get_blueprint_library().filter("vehicle.*"))
+        if actor_name:
+            blueprint.set_attribute('role_name', actor_name)
+        if blueprint.has_attribute('color'):
+            color = np.random.choice(
+                blueprint.get_attribute('color').recommended_values)
+            blueprint.set_attribute('color', color)
+        if blueprint.has_attribute('is_invincible'):
+            blueprint.set_attribute('is_invincible', 'true')
+        # Spawn vehicle
+        self._vehicle = self._world.spawn_actor(blueprint, spawn_point)
+        self._carla_id = self._vehicle.id
+        IMAGE_SHAPE = (200,300)
+
+        # Set up sensors
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
+                                                width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+                                                orientation=[1, 3, -10, 0], id="FrontSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[0, 3, -10, -45], id="LeftSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[0, 3, -10, 45], id="RightSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[-1, 3, -10, 180], id="RearSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[0], height=IMAGE_SHAPE[1],
+        #                                         orientation=[0, 40, -90, 0], id="TopSS"))                                                
+
+        self._sensors.append(CollisionSensor(self._vehicle))
+        self._sensors.append(LaneInvasionSensor(self._vehicle))
+
+    def reset(self, reset):
+        """Reset position and controls as well as sensors and state
+
+        reset = dict(
+            position=[x, y],
+            yaw=rotation,
+            steer=steer,
+            acceleration=acceleration
+        )
+
+        """
+        # position
+        transform = carla.Transform(
+            carla.Location(reset["position"][0], reset["position"][1]),
+            carla.Rotation(yaw=reset["yaw"])
+        )
+        self._vehicle.set_transform(transform)
+        # controls
+        self._vehicle.set_velocity(carla.Vector3D(0, 0, 0))
+        self._vehicle.set_angular_velocity(carla.Vector3D(0, 0, 0))
+        control = self._vehicle.get_control()
+        control.steer = reset["steer"]
+        if reset["acceleration"] >= 0:
+            control.brake = 0
+            control.throttle = reset["acceleration"]
+        else:
+            control.throttle = 0
+            control.brake = -reset["acceleration"]
+        self._vehicle.apply_control(control)
+        # sensors and state
+        self._sensors[1].reset()
+        self._sensors[2].reset()
+        self.state.collisions = 0
+        self.state.terminal = False
+        self.state.position = (reset["position"][0],
+                               reset["position"][1])
+
+        # Enable simulation physics if disabled
+        if not self._simulate_physics:
+            self._togglePhysics()
+
+
+    def _get_sensor_data(self, frame, timeout):
+        """Retrieve sensor data"""
+        data = np.asarray([s.retrieve_data(frame, timeout)
+                for s in self._sensors])
+        trim_to_be_divisible_by = 8
+        decimation = 2
+        
+        cam_data = data[:-2]
+        dec_data = [x[::decimation, ::decimation] for x in cam_data]
+        def trim(x, trim_to_be_divisible_by):
+            height, width = x.shape[0:2]
+
+            divisor = trim_to_be_divisible_by  # Easier to read
+            remainder = height % divisor
+            top_trim, bottom_trim = floor(remainder / 2), ceil(remainder / 2)
+
+            remainder = width % divisor
+            left_trim, right_trim = floor(remainder / 2), ceil(remainder / 2)
+
+            return x[bottom_trim:(height-top_trim), left_trim:(width-right_trim)].astype('uint8')
+
+        def extract_observation_for_batch(X, y, index, flip, classes_numbers):
+            X_out = [x[..., index] for x in X]
+            y_out = y[..., index]
+
+            if flip:
+                X_out = [np.fliplr(x) for x in X_out]
+                X_out[1], X_out[2] = X_out[2], X_out[1]
+                y_out = np.fliplr(y_out)
+
+            # After mirror flipping we can transpose `y`
+            y_out = np.fliplr(np.transpose(y_out, [1, 0, 2]))
+
+            X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
+            y_out = unwrap_to_ohe(y_out, classes_numbers)
+
+            return X_out, y_out
+
+        def unwrap_to_ohe(x, classes_numbers):
+            x = np.stack([
+                np.where(np.isin(x, classes_numbers[i]), 1, 0).astype(np.uint8)
+                for i in range(len(classes_numbers))
+            ])
+            return np.transpose(x[..., 0], [1, 2, 0])
+
+        trimmed_data = np.expand_dims(np.asarray(trim(dec_data[0], trim_to_be_divisible_by)), axis=3)
+        #trimmed_data = np.asarray(trim(dec_data[0], trim_to_be_divisible_by))
+        #trimmed_data = np.stack(trimmed_data)
+
+        classes_numbers = class_names_to_class_numbers(CLASSES_NAMES)
+
+
+        zeros = np.expand_dims(np.zeros((96,144,1), dtype="uint8"), axis=3)
+        ae_input=[trimmed_data, zeros, zeros, zeros]
+        #ae_input = extract_observation_for_batch(ae_input, np.zeros((96,144,1,1), dtype="uint8"), 0, True, classes_numbers)
+
+        X = ae_input
+        Y = np.zeros((144,96,1,1))
+
+        X_final, y_final = [[] for _ in range(len(X))], []
+        X_out, y_out = extract_observation_for_batch(X, Y, 0, False, classes_numbers)
+        for j in range(len(X_final)):
+            X_final[j].append(X_out[j])
+        y_final.append(y_out)
+
+        X_final = [np.stack(x) for x in X_final]
+        y_final = np.stack(y_final)
+
+
+
+        preds = self.ae.predict(X_final + [y_final], batch_size=1)
+        encoder_layer = self.ae.get_layer(name="encoder_submodel")
+
+        #front_ss_encoded = encoder_layer.get_output_at(0)[2:]
+        front_ss_encoded = self.intermediate_model.predict(X_final[0], batch_size=1)
+        #print(front_ss_encoded.shape)
+        self.state.image = front_ss_encoded
+        self.state.collision = data[1]
+        if self.state.collision: self.state.collisions += 1
+        self.state.lane_invasion = data[2]
 
 
 class DataGeneratorWrapper(ContinuousWrapper):
@@ -458,7 +683,6 @@ class DataGeneratorWrapper(ContinuousWrapper):
             data.append(nocam.retrieve_data(frame, timeout))
         self.state.collision = data[0]
         if self.state.collision: self.state.collisions += 1
-
         #self.state.lane_invasion = data[2]
 
     def _is_terminal(self):

@@ -28,6 +28,8 @@ from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
 from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
+from carla_rllib.wrappers.carla_wrapper import BirdsEyeWrapper
+
 
 from matplotlib import pyplot as plt
 import cv2
@@ -40,6 +42,10 @@ class BaseEnv(gym.Env):
 
     def __init__(self, config):
 
+        # some flags for wrapper selection
+        self._data_gen = False
+        self._use_birdseye = False
+
         print("-----Starting Environment-----")
         # Read config
         self._stable_baselines = config.stable_baselines
@@ -51,17 +57,13 @@ class BaseEnv(gym.Env):
         self._port = config.port
         self._map = config.map
         self._num_agents = config.num_agents
-        self._obs_shape = (64,64,1)
+        self._obs_shape = (1,12,18,64) if self._use_birdseye else (64,64,1) 
         self._cum_reward = 0
         self._prev_action = None
         self._action = None
         self._good_spawn_points = {  #Note: Town7 needs to be downloaded
             "Town05" : (51.1, 205.3)
         }
-
-        # only for data generation runs, didn't find good other place to put it
-        self._data_gen = True
-
         # Declare remaining variables
         self.frame = None
         self.timeout = 100.0
@@ -113,6 +115,12 @@ class BaseEnv(gym.Env):
                 self._agents.append(DataGeneratorWrapper(self.world,
                                                          self.spawnPointGenerator(self.spawn_points),
                                                          self._render_enabled))
+        elif self._use_birdseye:
+            for n in range(self._num_agents):
+                self._agents.append(BirdsEyeWrapper(self.world,
+                                                      self.spawn_points[random.randint(0,len(self.spawn_points))],
+                                                      self._render_enabled))
+        
         elif self._agent_type == "continuous":
             # Good spawn points for training:
             for n in range(self._num_agents):
@@ -204,6 +212,7 @@ class BaseEnv(gym.Env):
         # Set step and initialize reward_dict
         self._action = action
         reward_dict = dict()
+
         for agent in self._agents:
             if self._num_agents == 1:
                 agent.step(action)
@@ -253,6 +262,7 @@ class BaseEnv(gym.Env):
             obs_dict: dict
                 the initial observations
         """
+
         # Set reset
         for agent in self._agents:
             reset = self._get_reset(agent)
@@ -300,6 +310,21 @@ class BaseEnv(gym.Env):
                     cv2.imshow(sensor_id, obs_dict[agent.id][sensor_id])
                     cv2.waitKey(1)
 
+        elif self._use_birdseye:
+            obs_dict = dict()
+            for agent in self._agents:
+                obs_dict[agent.id] = agent.state.image
+
+            # PLOTTING - Be careful, this is slow!
+            plot = False
+            if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
+                plt.ion()
+                plt.show()
+                plt.imshow(obs_dict["Agent_1"], cmap="gray")
+                plt.draw()
+                plt.pause(0.01)
+
+            return obs_dict
 
         else:
             # Extract observations for agents
@@ -324,6 +349,7 @@ class BaseEnv(gym.Env):
                 plt.pause(0.01)
 
             obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
+            #print(obs_dict["Agent_1"].shape)
             #print("after reshape: " + str(obs_dict[agent.id].shape))
 
         return obs_dict
@@ -356,7 +382,7 @@ class BaseEnv(gym.Env):
 
         reward = -0.1
         reward = reward + velocity * 0.2 - dist_to_middle_lane * 0.2 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
-        print(reward)
+        #print(reward)
         return reward
 
     def _is_done(self):

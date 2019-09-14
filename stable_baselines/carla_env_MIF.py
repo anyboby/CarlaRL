@@ -71,6 +71,7 @@ try:
                 env.render()
         if MODE == "PPO": # Not working yet
             from stable_baselines.common.policies import CnnPolicy
+            from stable_baselines.common.policies import MlpPolicy
             from stable_baselines import PPO2
             env = DummyVecEnv([lambda: env])
             env = VecFrameStack(env, n_stack=4)

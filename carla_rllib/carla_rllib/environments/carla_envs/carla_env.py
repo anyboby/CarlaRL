@@ -28,6 +28,7 @@ from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
 from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
+
 from matplotlib import pyplot as plt
 import cv2
 import random
@@ -59,7 +60,7 @@ class BaseEnv(gym.Env):
         }
 
         # only for data generation runs, didn't find good other place to put it
-        self._data_gen = False
+        self._data_gen = True
 
         # Declare remaining variables
         self.frame = None
@@ -105,29 +106,24 @@ class BaseEnv(gym.Env):
 
         # Create Agent(s)
         self._agents = []
-        spawn_points = self.world.get_map().get_spawn_points() #commented by @Moritz [:self._num_agents]
-        n_spawnpoints = len(spawn_points)
+        self.spawn_points = self.world.get_map().get_spawn_points() #commented by @Moritz [:self._num_agents]
         if self._data_gen:
             # prefer out of town spawn spots
-            spawn_ind = random.randint(0,n_spawnpoints)
-            while (abs(spawn_points[spawn_ind].location.x) + abs(spawn_points[spawn_ind].location.y)) < 150:
-                spawn_ind = random.randint(0,n_spawnpoints)
-                print(spawn_points[spawn_ind])
             for n in range(self._num_agents):
                 self._agents.append(DataGeneratorWrapper(self.world,
-                                                         spawn_points[spawn_ind],
+                                                         self.spawnPointGenerator(self.spawn_points),
                                                          self._render_enabled))
         elif self._agent_type == "continuous":
             # Good spawn points for training:
             for n in range(self._num_agents):
                 self._agents.append(ContinuousWrapper(self.world,
-                                                      spawn_points[random.randint(0,n_spawnpoints)],
+                                                      self.spawn_points[random.randint(0,len(self.spawn_points))],
                                                       self._render_enabled))
                 
         elif self._agent_type == "discrete":
             for n in range(self._num_agents):
                 self._agents.append(DiscreteWrapper(self.world,
-                                                    spawn_points[random.randint(0,n_spawnpoints)],
+                                                    self.spawn_points[random.randint(0,len(self.spawn_points))],
                                                     self._render_enabled))
 
 
@@ -299,6 +295,8 @@ class BaseEnv(gym.Env):
                     # print ("image shape: " + str(agent.state.image.shape()))
                     # obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
                     # print("after resize: " + str(obs_dict[agent.id].shape()))
+                    
+                    
                     cv2.imshow(sensor_id, obs_dict[agent.id][sensor_id])
                     cv2.waitKey(1)
 
@@ -386,8 +384,14 @@ class BaseEnv(gym.Env):
         if self._agent_type == "continuous":
             reset = dict()
             for any_agent in self._agents:
+                # @git from Moritz
+                # if self._data_gen:
+                #     position = (self.spawnPointGeneratorTown5().location.x,
+                #                 self.spawnPointGeneratorTown5().location.y)
+                # elif self._map=="Town05": # replace with Town05 for manual position
+                #     position = (51.1, 205.3)
 
-
+                # @git from Flo
                 if self._map in self._good_spawn_points: 
                     position = self._good_spawn_points[self._map]
                 else:
@@ -443,3 +447,36 @@ class BaseEnv(gym.Env):
             agent.destroy()
         self.world.apply_settings(self._settings)
         pygame.quit()
+
+    """
+    returns spawnpoint somewhere in outer part of city
+    """
+    def spawnPointGenerator(self, spawn_points):
+        n_spawnpoints = len(spawn_points)
+        spawn_ind = random.randint(0,n_spawnpoints-1)
+        spawn_point = spawn_points[spawn_ind]
+        # while (abs(spawn_points[spawn_ind].location.x) + abs(spawn_points[spawn_ind].location.y)) < 150:
+        #     spawn_ind = random.randint(0,n_spawnpoints-1)
+        #     spawn_point = spawn_points[spawn_ind]
+        print("generated spawn_point: " + str(spawn_point) + ", numbeR: " + str(spawn_ind))
+        return spawn_point
+
+    """
+    returns spawnpoint somewhere in outer part of city
+    """
+    def spawnPointGeneratorTown5(self):
+
+        # for inspecting available spawnpoints
+        # for i in range(len(self.spawn_points)):
+        #     sp = self.spawn_points[i]
+        #     print(str(sp.location.x) + "   " + str(sp.location.y) + "   " + str(i))
+        #     if 45 < sp.location.x < 55 and 200 < sp.location.y < 210:
+        #         print(i)
+            
+
+        good_spawns = [268, 212, 262, 227, 162, 50, 225, 97, 89, 50, 49, 163, 234, 235, 234, 234, 234, 235, 234, 235]
+        n_spawnpoints = len(good_spawns)
+        spawn_ind = good_spawns[random.randint(0,n_spawnpoints-1)]
+        spawn_point = self.spawn_points[spawn_ind]
+        print("generated spawn_point: " + str(spawn_point) + ", numbeR: " + str(spawn_ind))
+        return spawn_point

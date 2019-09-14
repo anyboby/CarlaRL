@@ -90,7 +90,7 @@ try:
             from stable_baselines import SAC
             env = VecFrameStack(env, n_stack=4)
             env = DummyVecEnv([lambda: env])
-            model = SAC(CnnPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/")
+            model = SAC(CnnPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/", full_tensorboard_log=True)
             # When one episode has 1000 steps the paremter means = 50 episodes
             model.learn(total_timesteps=50000, log_interval=100)
             model.save("carla_sac")
@@ -100,6 +100,24 @@ try:
                 #print(action)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
+        if MODE == "A2C":
+
+            from stable_baselines.a2c.policies import CnnPolicy
+            from stable_baselines.common.vec_env import SubprocVecEnv
+            from stable_baselines import A2C
+            env = SubprocVecEnv([lambda: env])
+            model = A2C(CnnPolicy, env, verbose=1, tensorboard_log="./tensorboard_logs/", full_tensorboard_log=True)
+            # When one episode has 1000 steps the paremter means = 50 episodes
+            model.learn(total_timesteps=10000, log_interval=10)
+            model.save("carla_a2c")
+            obs = env.reset()
+            while True:
+                action, _states = model.predict(obs)
+                #print(action)
+                obs, rewards, dones, info = env.step(action)
+                env.render()
+
+
 finally:
     env.close()
     print("-----Carla Environment is closed-----")

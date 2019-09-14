@@ -24,7 +24,7 @@ import pygame
 import queue
 import numpy as np
 import argparse
-from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, RgbSensor, CollisionSensor, LaneInvasionSensor, RenderCamera
+from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCustom, SegmentationSensorTags, RgbSensor, CollisionSensor, LaneInvasionSensor, RenderCamera
 from carla_rllib.wrappers.states import BaseState
 
 
@@ -130,8 +130,8 @@ class BaseWrapper(object):
         ----------
         reset: dict
             contains reset information specific to the learning goals
-
         """
+        self.state.collisions = 0
         raise NotImplementedError
 
     def render(self):
@@ -169,6 +169,7 @@ class BaseWrapper(object):
                 for s in self._sensors]
         self.state.image = data[0]
         self.state.collision = data[1]
+        if self.state.collision: self.state.collisions += 1
         self.state.lane_invasion = data[2]
 
 
@@ -359,6 +360,7 @@ class ContinuousWrapper(BaseWrapper):
         # sensors and state
         self._sensors[1].reset()
         self._sensors[2].reset()
+        self.state.collisions = 0
         self.state.terminal = False
         self.state.position = (reset["position"][0],
                                reset["position"][1])
@@ -372,86 +374,41 @@ class DataGeneratorWrapper(ContinuousWrapper):
 
     def _start(self, spawn_point, actor_model=None, actor_name=None):
         super(DataGeneratorWrapper, self)._start(spawn_point)
-        print("test")
         # Set up sensors
         self._sensors = []
-        self._sensors.append(SegmentationSensorCustom(self._vehicle,
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=200, height=300,
                                                 orientation=[0, 40, -90, 0], id="TopSS"))
-
         self._sensors.append(RgbSensor(self._vehicle,
                                                 width=300, height=200,
                                                 orientation=[1, 3, -10, 0], id="FrontRGB"))
-
         self._sensors.append(RgbSensor(self._vehicle,
                                                 width=300, height=200,
                                                 orientation=[0, 3, -10, -45], id="LeftRGB"))
-
         self._sensors.append(RgbSensor(self._vehicle,
                                                 width=300, height=200,
                                                 orientation=[0, 3, -10, 45], id="RightRGB"))
-
         self._sensors.append(RgbSensor(self._vehicle,
                                                 width=300, height=200,
                                                 orientation=[-1, 3, -10, 180], id="RearRGB"))
-        
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[1, 3, -10, 0], id="FrontSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 3, -10, -45], id="LeftSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[0, 3, -10, 45], id="RightSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
+                                                width=300, height=200,
+                                                orientation=[-1, 3, -10, 180], id="RearSS"))
+
         self._sensors.append(CollisionSensor(self._vehicle))
 
         # set autopilot for data generation
         self._vehicle.set_autopilot(True)
-
-        #self._sensors.append(CollisionSensor(self._vehicle))
-        #self._sensors.append(LaneInvasionSensor(self._vehicle))
-    
-    # # automatic stepping #
-    # def step(self, action):
-    #     """Apply steering and throttle/brake control
-
-    #     action = [steer, acceleration]
-
-    #     """
-
-
-    #     # measurements, sensor_data = self._vehicle.carla_client.read_data()
-    #     # control = measurements.player_measurements.autopilot_control
-    #     # # modify here control if wanted.
-    #     # self._vehicle.carla_client.send_control(control)
-
-    #     #self._vehicle.set_autopilot(True)
-
-    #     ### -- original step -- ####
-
-    #     control = self._vehicle.get_control()
-    #     control.manual_gear_shift = False
-    #     control.reverse = False
-    #     control.hand_brake = False
-
-    #     control.brake
-    #     control.steer = float(action[0])
-
-    #     if action[1] >= 0:
-    #         control.brake = 0
-    #         control.throttle = float(action[1])
-    #     else:
-    #         control.throttle = 0
-    #         control.brake = -float(action[1])
-    #     self._vehicle.apply_control(control)
-
-    def _get_sensor_data(self, frame, timeout):
-        """Retrieve sensor data"""
-        self.state.storage = dict()
-        cameras = (s for s in self._sensors if hasattr(s, "_id") and s._id is not "Default")
-        non_cameras = (s for s in self._sensors if not hasattr(s, "_id") or s._id is "Default")
-        for cam in cameras:
-            self.state.storage[cam._id]=cam.retrieve_data(frame, timeout)
-            self.state.image = self.state.storage[cam._id]
-
-        data = []
-        for nocam in non_cameras:
-            data.append(nocam.retrieve_data(frame, timeout))
-        self.state.collision = data[0]
-        #self.state.lane_invasion = data[2]
-
+        self._frames_standing = 0
     def reset(self, reset):
         """Reset position and controls as well as sensors and state
 
@@ -473,19 +430,11 @@ class DataGeneratorWrapper(ContinuousWrapper):
         # controls
         self._vehicle.set_velocity(carla.Vector3D(0, 0, 0))
         self._vehicle.set_angular_velocity(carla.Vector3D(0, 0, 0))
-        control = self._vehicle.get_control()
-        control.steer = reset["steer"]
-        if reset["acceleration"] >= 0:
-            control.brake = 0
-            control.throttle = reset["acceleration"]
-        else:
-            control.throttle = 0
-            control.brake = -reset["acceleration"]
-        self._vehicle.apply_control(control)
 
         # sensors and state
-        # for s in self._sensors:
-        #     s.reset()
+        self._sensors[9].reset()
+        self._frames_standing = 0
+        self.state.collisions = 0
         self.state.terminal = False
         self.state.position = (reset["position"][0],
                                reset["position"][1])
@@ -494,9 +443,33 @@ class DataGeneratorWrapper(ContinuousWrapper):
         if not self._simulate_physics:
             self._togglePhysics()
 
+    def _get_sensor_data(self, frame, timeout):
+        """Retrieve sensor data"""
+        self.state.storage = dict()
+        cameras = (s for s in self._sensors if hasattr(s, "_id") and s._id is not "Default")
+        non_cameras = (s for s in self._sensors if not hasattr(s, "_id") or s._id is "Default")
+        for cam in cameras:
+            self.state.storage[cam._id]=cam.retrieve_data(frame, timeout)
+            self.state.image = self.state.storage[cam._id]
+        if self.state.velocity < 0.1:
+            self._frames_standing += 1
+        data = []
+        for nocam in non_cameras:
+            data.append(nocam.retrieve_data(frame, timeout))
+        self.state.collision = data[0]
+        if self.state.collision: self.state.collisions += 1
+
+        #self.state.lane_invasion = data[2]
+
     def _is_terminal(self):
         """Check terminal conditions"""
         # TODO: Adjust terminal conditions
+        # @git from Moritz
+        # if (self.state.collisions > 20 or
+        #     self.state.distance_to_center_line > 30 or     # @MORITZ TODO maybe uncomment back to 1.8
+        #         self._frames_standing > 300
+        #         or self.state.elapsed_ticks >= 100000):   # @MORITZ TODO maybe uncomment back to 1000
+        #     print("terminating!")
         if (self.state.collision or
             self.state.distance_to_center_line > 1.8     # @MORITZ TODO maybe uncomment back to 1.8
                 or self.state.elapsed_ticks >= 5000):   # @MORITZ TODO maybe uncomment back to 1000
@@ -546,6 +519,7 @@ class DiscreteWrapper(BaseWrapper):
         self._sensors[1].reset()
         self._sensors[2].reset()
         self.state.terminal = False
+        self.state.collisions = 0
         self.state.position = (reset["position"][0],
                                reset["position"][1])
 

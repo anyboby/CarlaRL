@@ -18,18 +18,18 @@ from keras.models import load_model
 
 LABELS = {
     0: 'None',
-    1: 'Buildings',
-    2: 'Fences',
-    3: 'Other',
-    4: 'Pedestrians',
-    5: 'Poles',
-    6: 'RoadLines',
-    7: 'Roads',
-    8: 'Sidewalks',
-    9: 'Vegetation',
-    10: 'Vehicles',
-    11: 'Walls',
-    12: 'TrafficSigns',
+    70: 'Buildings',
+    152: 'Fences',      # this one doesnt exist
+    160: 'Other',
+    60: 'Pedestrians',
+    153: 'Poles',
+    50: 'RoadLines',
+    128: 'Roads',
+    232: 'Sidewalks',
+    35: 'Vegetation',
+    142: 'Vehicles',
+    156: 'Walls',
+    1: 'TrafficSigns',  # this one doesnt exist
 }
 
 REVERSE_LABELS = dict(zip(LABELS.values(), LABELS.keys()))
@@ -42,7 +42,9 @@ def plot_semantic(x, cmap='gist_stern'):
     plt.clf()
     plt.figure(figsize=(40, 10))
     plt.imshow(np.argmax(x[0, ...], axis=2), vmin=0, vmax=num_classes, cmap=cmap)
+    plt.draw()
     plt.show()
+    #plt.pause(0.00001)
 
 
 def class_names_to_class_numbers(class_names):

@@ -1,5 +1,4 @@
 """CARLA Gym Environment
-
 This script provides single- and multi-agent environments for Reinforcement Learning in the Carla Simulator.
 
 Class:
@@ -64,6 +63,7 @@ class BaseEnv(gym.Env):
         self._good_spawn_points = {  #Note: Town7 needs to be downloaded
             "Town05" : (51.1, 205.3)
         }
+        self._current_position = None
         # Declare remaining variables
         self.frame = None
         self.timeout = 100.0
@@ -362,12 +362,16 @@ class BaseEnv(gym.Env):
         collisions  = agent.state.collision 
         dist_to_middle_lane = agent.state.distance_to_center_line
         current_steering = self._action[0]
-        
+        position = agent.state.position        
+
         # Calculate temporal differences and penalty values
         invasions_incr = lane_invasion - self.lane_invasion
         steering_change = 0
+        position_change = 0
         if not self._prev_action is None:
             steering_change = abs(current_steering - self._prev_action[0])
+        if not self._current_position is None:
+            position_change = abs(position[0] - self._current_position[0]) + abs(position[1] - self._current_position[1])
         # Hotfix because on collision this value is set negative
         if invasions_incr < 0:
             invasions_incr = 0
@@ -379,9 +383,9 @@ class BaseEnv(gym.Env):
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
-
+        self._current_position = position
         reward = -0.1
-        reward = reward + velocity * 0.1 - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.3 #- invasions_incr * velocity
+        reward = reward + velocity * 0.15 + position_change  - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
         #print(reward)
         return reward
 
@@ -393,8 +397,6 @@ class BaseEnv(gym.Env):
         return done_dict
 
     def _get_info(self):
-        """Return current information"""
-        # TODO: add something to print out
         info_dict = dict()
         for agent in self._agents:
             info_dict[agent.id] = dict(Info="Store whatever you want")

@@ -79,8 +79,9 @@ try:
             # Increased learning rate
             # Faster updates
             model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.001, n_steps=512, cliprange=0.1, noptepochs=2)
-            model.learn(total_timesteps=400000)
+            model.learn(total_timesteps=200000)
             model.save("carla_ppo")
+            model = PPO2.load("carla_ppo")
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)

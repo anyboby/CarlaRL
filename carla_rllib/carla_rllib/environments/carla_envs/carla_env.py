@@ -44,7 +44,7 @@ class BaseEnv(gym.Env):
 
         # some flags for wrapper selection
         self._data_gen = False
-        self._use_birdseye = False
+        self._use_birdseye = True
 
         print("-----Starting Environment-----")
         # Read config
@@ -380,8 +380,9 @@ class BaseEnv(gym.Env):
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
 
+        # dist_to_middle_lane^2 ?
         reward = -0.1
-        reward = reward + velocity * 0.1 - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.3 #- invasions_incr * velocity
+        reward = reward + velocity * 0.1 - dist_to_middle_lane * 0.1 - collision_penalty # - steering_change * 0.3 #- invasions_incr * velocity
         #print(reward)
         return reward
 

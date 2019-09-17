@@ -11,6 +11,7 @@ from pygame.locals import K_DOWN
 from pygame.locals import K_LEFT
 from pygame.locals import K_RIGHT
 import time 
+import cv2
 
 if __name__ == "__main__": 
     argparser = argparse.ArgumentParser(
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     env = gym.make("CarlaBaseEnv-v0", config=configs[0])
     clock = pygame.time.Clock()
 
-
+    manual_control = True
     track = "Town05"
 
     try:
@@ -55,36 +56,41 @@ if __name__ == "__main__":
                 )).astype("uint8")
 
         while True:
-            # milliseconds = clock.get_time()
-            # for event in pygame.event.get():
-            #     keys = pygame.key.get_pressed()
-            #     if keys[K_UP]:
-            #         a = 1.0
-            #     elif keys[K_DOWN]:
-            #         a = -1.0
-            #     else:
-            #         a = 0     
+            if manual_control:
+                milliseconds = clock.get_time()
+                for event in pygame.event.get():
+                    keys = pygame.key.get_pressed()
+                    if keys[K_UP]:
+                        a = 1.0
+                    elif keys[K_DOWN]:
+                        a = -1.0
+                    else:
+                        a = 0     
 
-            #     steer_increment = 9e-4 * milliseconds
-            #     if  keys[K_LEFT]:   
-            #         steer_cache -= steer_increment
-            #     elif keys[K_RIGHT]:
-            #         steer_cache += steer_increment
-            #     else:
-            #         steer_cache = 0.0
+                    steer_increment = 9e-4 * milliseconds
+                    if  keys[K_LEFT]:   
+                        steer_cache -= steer_increment
+                    elif keys[K_RIGHT]:
+                        steer_cache += steer_increment
+                    else:
+                        steer_cache = 0.0
+                
+                s = min(0.7, max(-0.7, steer_cache))
+                
+                action = [s, a]
+            else:
+                action = [0,0]
             
-            # s = min(0.7, max(-0.7, steer_cache))
-            
-            # action = [s, a]
-            # doesnt matter, autopilot anyways
-            action = [0,0]
             obs, reward, done, info = env.step(action)
 
             for id_ in obs.keys():
                 data = obs[id_]
                 storage[id_][..., frame] = data
-    
             #print(env._agents[0].state)
+
+            cv2.imshow("frontRGB", obs["FrontRGB"])
+            cv2.waitKey(1)
+
 
             frame += 1
             clock.tick(200) #@MORITZ TODO reset to original 4 (but seems to be laggy)

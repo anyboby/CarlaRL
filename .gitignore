@@ -21,8 +21,8 @@
 *camera_storage/
 *histories/
 *movies/
-
-
+*semantic_birdseye_env/
+*models/
 tensorboard_logs/
 logs/
 

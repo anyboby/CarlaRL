@@ -72,13 +72,14 @@ try:
         if MODE == "PPO": # Not working yet
             from stable_baselines.common.policies import CnnPolicy
             from stable_baselines.common.policies import MlpPolicy
+            from stable_baselines.common.policies import CnnLnLstmPolicy
             from stable_baselines import PPO2
             env = DummyVecEnv([lambda: env])
             env = VecFrameStack(env, n_stack=4)
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.001, n_steps=512, cliprange=0.1, noptepochs=2)
+            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.001, n_steps=512, cliprange=0.1, noptepochs=2, nminibatches=1)
             model.learn(total_timesteps=400000)
             model.save("carla_ppo")
             obs = env.reset()

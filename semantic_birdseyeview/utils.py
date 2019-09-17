@@ -179,7 +179,10 @@ def extract_observation_for_batch(X, y, index, flip, classes_numbers):
     # After mirror flipping we can transpose `y`
     y_out = np.fliplr(np.transpose(y_out, [1, 0, 2]))
 
-    X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
+    #unwrap from 1 channel SS to number of classes (only if X/Y is ss with 1 channel)
+    for i in range(len(X_out)):
+        X_out[i] = unwrap_to_ohe(X_out[i], classes_numbers) if X_out[i].shape[2] is 1 else X_out[i] 
+    #X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
     y_out = unwrap_to_ohe(y_out, classes_numbers)
 
     return X_out, y_out
@@ -228,6 +231,32 @@ def batcher(gen, batch_size, zero_array=None, cast_to=None):
 
         yield out_X, out_Y
 
+def batcher_rgb(gen, batch_size, zero_array=None, cast_to=None):
+    """
+    this batcher yields batches specifically for rgb to ss autoencoders, where inputs != target
+    """
+    # Just to initialize
+    x, y = next(gen)
+    x_shape = (batch_size, *x[0].shape)
+    y_shape = (batch_size, *y.shape)
+
+    while True:
+        X = [np.zeros(x_shape, dtype=np.uint8) for _ in range(len(x))]
+        Y = np.zeros(y_shape, dtype=np.uint8)
+        for i in range(batch_size):
+            x, y = next(gen)
+            for j in range(len(x)):
+                X[j][i] = x[j]
+                if cast_to is not None:
+                    X[j][i] = X[j][i].dtype(cast_to)
+            Y[i] = y
+            if cast_to is not None:
+                Y[i] = Y[i].dtype(cast_to)
+    
+        out_X = X[4:8] + [Y]
+        out_Y = X[0:4] + [Y, Y] if zero_array is None else X[0:4] + [Y, Y, zero_array]
+
+        yield out_X, out_Y
 
 def sequential_batcher(
     X, Y, classes_names, return_sequences=True,
@@ -272,107 +301,6 @@ def sequential_batcher(
 
         yield X_out, y_out
 
-
-def make_movie(
-    multi_model_path, racetrack, episode, decimation, classes_names, camera_ids,
-    multi_model=None, episode_len=1000, fps=20, which_preds=5, batch_size=32,
-    cmap='gist_stern'
-):
-    if multi_model is None:
-        multi_model = load_model(multi_model_path)
-
-    storage = get_X_and_Y([racetrack], [episode], decimation, camera_ids)
-    X = [storage[id_] for id_ in camera_ids if 'Top' not in id_]
-    Y = [storage[id_] for id_ in camera_ids if 'Top' in id_][0]
-
-    classes_numbers = class_names_to_class_numbers(classes_names)
-
-    X_final, y_final = [[] for _ in range(len(X))], []
-    for index in range(episode_len):
-        X_out, y_out = extract_observation_for_batch(X, Y, index, False, classes_numbers)
-        for j in range(len(X_final)):
-            X_final[j].append(X_out[j])
-        y_final.append(y_out)
-
-    X_final = [np.stack(x) for x in X_final]
-    y_final = np.stack(y_final)
-
-    preds = multi_model.predict(X_final + [y_final], batch_size=batch_size)
-
-    data = preds[which_preds]  # Easier to read
-
-    duration = data.shape[0] // fps
-
-    fig, ax = plt.subplots()
-
-    ax.grid(False)
-
-    fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-    ax.margins(0, 0)
-
-    def make_frame(t, data):
-        frame_idx = int(t*fps)
-
-        height, width, num_classes = y_final.shape[1:]
-
-        unit_length = int(height / 2)
-
-        frame_height = int(6.8 * unit_length)
-        frame_width = int(15.5 * unit_length)
-
-        color_shift = 0
-        frame = np.zeros((frame_height, frame_width)) + num_classes + color_shift
-
-        one_fifth = int(unit_length / 5)
-
-        # Front
-        gap_1 = int(1.8 * unit_length)
-        frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = np.argmax(X_final[0][frame_idx], axis=2)
-
-        # Left
-        gap_2 = int(one_fifth + height + one_fifth)
-        frame[gap_2:(gap_2+height), one_fifth:(one_fifth+width)] = np.argmax(X_final[1][frame_idx], axis=2)
-
-        # Right
-        gap_3 = one_fifth + width + one_fifth
-        frame[gap_2:(gap_2+height), gap_3:(gap_3+width)] = np.argmax(X_final[2][frame_idx], axis=2)
-
-        # Rear
-        gap_4 = one_fifth + height + one_fifth + height + one_fifth
-        frame[gap_4:(gap_4+height), gap_1:(gap_1+width)] = np.argmax(X_final[3][frame_idx], axis=2)
-
-        # Top (true)
-        gap_5 = gap_1 + width + gap_1 + one_fifth
-        frame[2*one_fifth:(2*one_fifth+2*width), gap_5:(gap_5+2*height)] = np.flipud(np.kron(
-            np.argmax(y_final[frame_idx], axis=2).T,
-            np.ones((2, 2))
-        ))
-
-        # Top (pred)
-        gap_6 = gap_5 + 2*height + 2*one_fifth
-        frame[2*one_fifth:(2*one_fifth+2*width), gap_6:(gap_6+2*height)] = np.flipud(np.kron(
-            np.argmax(data[frame_idx], axis=2).T,
-            np.ones((2, 2))
-        ))
-
-        ax.clear()
-        ax.imshow(frame, cmap=cmap, aspect='auto', vmin=0, vmax=data.shape[-1])
-        ax.axis('off')
-        return mplfig_to_npimage(fig)
-
-
-    animation = VideoClip(
-        lambda t: make_frame(t, data),
-        duration=duration
-    )
-    file_name = multi_model_path.replace('models/', '').replace('.h5', '')
-    file_name = os.path.join('movies', file_name)
-    file_name += '_racetrack=' + racetrack
-    file_name += '_episode=' + str(episode)
-    file_name += '.mp4'
-    animation.write_videofile(file_name, fps=fps)
-
-    return multi_model
 
 
 def find_waypoints(
@@ -436,31 +364,13 @@ def find_waypoints(
     return waypoints, frame
 
 
-def rgb_frame(preds, y_final, idx, draw_waypoints):
-    predicted = np.flipud(np.transpose(preds[idx], axes=[1, 0, 2]))
-    ground_truth = np.flipud(np.transpose(y_final[idx], axes=[1, 0, 2]))
-    if draw_waypoints:
-        _, predicted = find_waypoints(predicted)
-        _, ground_truth = find_waypoints(ground_truth)
-    gap = np.zeros_like(predicted)[:, ::5]
-    inside = np.concatenate([ground_truth, gap, predicted], axis=1)
-
-    width, height, num_channels = inside.shape
-    _, margin, _ = gap.shape
-    final_frame = np.zeros((
-        margin + width + margin,
-        margin + height + margin,
-        num_channels
-    ))
-    final_frame[margin:-margin, margin:-margin] = inside
-
-    return final_frame
-
-
-def make_rgb_movie(
-    birds_view_model, racetrack, episode, decimation, classes_names, camera_ids,
-    episode_len=1000, fps=20, batch_size=32, draw_waypoints=True,
+def make_movie(
+    multi_model_path, racetrack, episode, decimation, classes_names, camera_ids,
+    multi_model=None, episode_len=1000, fps=20, which_preds=5, batch_size=32,
+    cmap='gist_stern'
 ):
+    if multi_model is None:
+        multi_model = load_model(multi_model_path)
 
     storage = get_X_and_Y([racetrack], [episode], decimation, camera_ids)
     X = [storage[id_] for id_ in camera_ids if 'Top' not in id_]
@@ -468,17 +378,21 @@ def make_rgb_movie(
 
     classes_numbers = class_names_to_class_numbers(classes_names)
 
-    X_final, y_final = [[] for _ in range(len(camera_ids[:-1]))], []
+    X_final, y_final = [[] for _ in range(len(X))], []
     for index in range(episode_len):
         X_out, y_out = extract_observation_for_batch(X, Y, index, False, classes_numbers)
-        for j in range(len(camera_ids[:-1])):
+        for j in range(len(X_final)):
             X_final[j].append(X_out[j])
         y_final.append(y_out)
 
     X_final = [np.stack(x) for x in X_final]
     y_final = np.stack(y_final)
 
-    preds = birds_view_model.predict(X_final, batch_size=batch_size)
+    preds = multi_model.predict(X_final + [y_final], batch_size=batch_size)
+
+    data = preds[which_preds]  # Easier to read
+
+    duration = data.shape[0] // fps
 
     fig, ax = plt.subplots()
 
@@ -487,26 +401,129 @@ def make_rgb_movie(
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
     ax.margins(0, 0)
 
+    ss_to_rgb = {
+        0:[0,51,255],
+        1:[213, 0, 255],
+        2:[0,170,45]
+    }
 
-    def make_frame(t, preds, y_final):
+    def make_frame(t, data):
         frame_idx = int(t*fps)
-        frame = rgb_frame(preds, y_final, frame_idx, draw_waypoints)
+
+        height, width, num_classes = y_final.shape[1:]
+        
+        unit_length = int(height / 2)
+
+        frame_height = int(6.8 * unit_length)
+        frame_width = int(15.5 * unit_length)
+
+        color_shift = 0
+        frame = np.zeros((frame_height, frame_width)) + num_classes + color_shift
+
+        one_fifth = int(unit_length / 5)
+
+        # Front
+        gap_1 = int(1.8 * unit_length)
+        # frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = np.argmax(X_final[0][frame_idx], axis=2)
+        frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = X_final[0][frame_idx]
+
+        # Left
+        gap_2 = int(one_fifth + height + one_fifth)
+        frame[gap_2:(gap_2+height), one_fifth:(one_fifth+width)] = np.argmax(X_final[1][frame_idx], axis=2)
+
+        # Right
+        gap_3 = one_fifth + width + one_fifth
+        frame[gap_2:(gap_2+height), gap_3:(gap_3+width)] = np.argmax(X_final[2][frame_idx], axis=2)
+
+        # Rear
+        gap_4 = one_fifth + height + one_fifth + height + one_fifth
+        frame[gap_4:(gap_4+height), gap_1:(gap_1+width)] = np.argmax(X_final[3][frame_idx], axis=2)
+
+        # Top (true)
+        gap_5 = gap_1 + width + gap_1 + one_fifth
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_5:(gap_5+2*height)] = np.flipud(np.kron(
+            np.argmax(y_final[frame_idx], axis=2).T,
+            np.ones((2, 2))
+        ))
+
+        # Top (pred)
+        gap_6 = gap_5 + 2*height + 2*one_fifth
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_6:(gap_6+2*height)] = np.flipud(np.kron(
+            np.argmax(data[frame_idx], axis=2).T,
+            np.ones((2, 2))
+        ))
 
         ax.clear()
-        ax.imshow(frame, aspect='auto')
-        ax.text(40, 177, 'actual', color='white', fontsize=24, fontweight='bold')
-        ax.text(145, 177, 'predicted', color='white', fontsize=24, fontweight='bold')
+        ax.imshow(frame, cmap=cmap, aspect='auto', vmin=0, vmax=data.shape[-1])
+        ax.axis('off')
+        return mplfig_to_npimage(fig)
+
+    def make_frame_rgb(t, data):
+        frame_idx = int(t*fps)
+
+        height, width, num_classes = X_final[0].shape[1:]
+        
+        unit_length = int(height / 2)
+
+        frame_height = int(6.8 * unit_length)
+        frame_width = int(15.5 * unit_length)
+
+        color_shift = 0
+        frame = np.zeros((frame_height, frame_width, num_classes)) + color_shift
+
+        one_fifth = int(unit_length / 5)
+
+        # Front
+        gap_1 = int(1.8 * unit_length)
+        # frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = np.argmax(X_final[0][frame_idx], axis=2)
+        frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width),:] = X_final[0][frame_idx]
+
+        # Left
+        gap_2 = int(one_fifth + height + one_fifth)
+        frame[gap_2:(gap_2+height), one_fifth:(one_fifth+width), :] = X_final[1][frame_idx]
+
+        # Right
+        gap_3 = one_fifth + width + one_fifth
+        frame[gap_2:(gap_2+height), gap_3:(gap_3+width), :] = X_final[2][frame_idx]
+
+        # Rear
+        gap_4 = one_fifth + height + one_fifth + height + one_fifth
+        frame[gap_4:(gap_4+height), gap_1:(gap_1+width), :] = X_final[3][frame_idx]
+
+        # Top (true)
+        gap_5 = gap_1 + width + gap_1 + one_fifth
+        ss = np.flipud(np.kron(
+            np.argmax(y_final[frame_idx], axis=2).T,
+            np.ones((2, 2))
+        ))
+        ss[2] = ss_to_rgb[ss[2]]
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_5:(gap_5+2*height)] = ss
+
+        # Top (pred)
+        gap_6 = gap_5 + 2*height + 2*one_fifth
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_6:(gap_6+2*height)] = np.flipud(np.kron(
+            np.argmax(data[frame_idx], axis=2).T,
+            np.ones((2, 2))
+        ))
+
+        ax.clear()
+        ax.imshow(frame, cmap=cmap, aspect='auto', vmin=0, vmax = 255) #vmax=data.shape[-1]
         ax.axis('off')
         return mplfig_to_npimage(fig)
 
 
-    duration = preds.shape[0] // fps
-
     animation = VideoClip(
-        lambda t: make_frame(t, preds, y_final),
+        lambda t: make_frame(t, data),
+        duration=duration
+    ) if cmap == "gist_stern" else VideoClip(
+        lambda t: make_frame_rgb(t, data),
         duration=duration
     )
-    file_name = 'birds_view_model__racetrack={}_episode={}_RGB.mp4'.format(racetrack, episode)
-    file_name = Path('movies') / file_name
-    file_name = str(file_name)
+    file_name = multi_model_path.replace('models/', '').replace('.h5', '')
+    file_name = os.path.join('movies', file_name)
+    file_name += '_racetrack=' + racetrack
+    file_name += '_episode=' + str(episode)
+    file_name += '.mp4'
     animation.write_videofile(file_name, fps=fps)
+
+    return multi_model

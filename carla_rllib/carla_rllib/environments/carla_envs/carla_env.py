@@ -43,7 +43,7 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
 
         # some flags for wrapper selection
-        self._data_gen = False
+        self._data_gen = True
         self._use_birdseye = False
 
         print("-----Starting Environment-----")
@@ -418,7 +418,7 @@ class BaseEnv(gym.Env):
                 #     position = (51.1, 205.3)
 
                 # @git from Flo
-                if self._map in self._good_spawn_points: 
+                if self._map in self._good_spawn_points and not self._data_gen: 
                     position = self._good_spawn_points[self._map]
                 else:
                     pos = any_agent._vehicle.get_location()

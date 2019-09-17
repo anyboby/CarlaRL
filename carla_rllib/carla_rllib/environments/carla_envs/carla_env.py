@@ -43,7 +43,7 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
 
         # some flags for wrapper selection
-        self._data_gen = True
+        self._data_gen = False
         self._use_birdseye = False
 
         print("-----Starting Environment-----")

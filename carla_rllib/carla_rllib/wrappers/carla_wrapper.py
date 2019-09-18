@@ -694,8 +694,8 @@ class DataGeneratorWrapper(ContinuousWrapper):
         #         self._frames_standing > 300
         #         or self.state.elapsed_ticks >= 100000):   # @MORITZ TODO maybe uncomment back to 1000
         #     print("terminating!")
-        if (self.state.collision or
-            self.state.distance_to_center_line > 20     # @MORITZ TODO maybe uncomment back to 1.8
+        if (self.state.collision #or
+            #self.state.distance_to_center_line > 20     # @MORITZ TODO maybe uncomment back to 1.8
                 or self.state.elapsed_ticks >= 5000):   # @MORITZ TODO maybe uncomment back to 1000
             return True
         else:

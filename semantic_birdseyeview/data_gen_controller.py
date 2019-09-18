@@ -42,7 +42,7 @@ if __name__ == "__main__":
         print("-----Carla Environment is running-----")
         y = 0
         episode = 0
-        episodes_successful = 106
+        episodes_successful = 1
         frame = 0
         frames_per_episode = 1000
         storage = {}
@@ -88,8 +88,8 @@ if __name__ == "__main__":
                 storage[id_][..., frame] = data
             #print(env._agents[0].state)
 
-            cv2.imshow("frontRGB", obs["FrontRGB"])
-            cv2.waitKey(1)
+            # cv2.imshow("frontRGB", obs["FrontRGB"])
+            # cv2.waitKey(1)
 
 
             frame += 1

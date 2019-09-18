@@ -401,12 +401,7 @@ def make_movie(
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
     ax.margins(0, 0)
 
-    ss_to_rgb = {
-        0:[0,51,255],
-        1:[213, 0, 255],
-        2:[0,170,45]
-    }
-
+    colors = [0,1,2]
     def make_frame(t, data):
         frame_idx = int(t*fps)
 
@@ -469,7 +464,7 @@ def make_movie(
         frame_width = int(15.5 * unit_length)
 
         color_shift = 0
-        frame = np.zeros((frame_height, frame_width, num_classes)) + color_shift
+        frame = np.zeros((frame_height, frame_width, num_classes), dtype="uint8") + color_shift
 
         one_fifth = int(unit_length / 5)
 
@@ -492,19 +487,37 @@ def make_movie(
 
         # Top (true)
         gap_5 = gap_1 + width + gap_1 + one_fifth
-        ss = np.flipud(np.kron(
-            np.argmax(y_final[frame_idx], axis=2).T,
-            np.ones((2, 2))
-        ))
-        ss[2] = ss_to_rgb[ss[2]]
-        frame[2*one_fifth:(2*one_fifth+2*width), gap_5:(gap_5+2*height)] = ss
+        ss1 = np.argmax(y_final[frame_idx], axis=2)
+        ss2 = y_final[frame_idx]
+        ss3 = np.transpose(ss2, (1,0,2))
+        ss4 = np.kron(
+            ss3,
+            np.ones((2, 2, 1))
+        ).astype("uint8")
+        ss5 = np.flipud(ss4)
+        ss6 = 255*ss5
+        ss7 = ss6.astype("uint8")
+        # ss[:,:,] = ss[ss_to_rgb[ss[2]]
+        # transpose: switch width and height dims of tensor
+        # kronecker product: expand to bigger size kronecker product
+        # flipud: flip up and down (really just turn image upside down)
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_5:(gap_5+2*height)] = 255 * np.flipud(
+            np.kron(np.transpose(y_final[frame_idx], (1,0,2)),
+            np.ones((2, 2, 1))).astype("uint8")
+        )
+
+
+        ss1 = np.argmax(data[frame_idx], axis=2)
+        ss2 = [255*np.all([ss1[:,:] == c, ss1[:,:] == c, ss1[:,:] == c], axis=0) for c in colors]
+        ss3 = np.dstack(ss2)
+        ss4 = np.flipud(np.kron(
+                np.transpose(np.dstack(ss2), (1,0,2)),
+                np.ones((2, 2, 1))
+            ).astype("uint8"))
 
         # Top (pred)
         gap_6 = gap_5 + 2*height + 2*one_fifth
-        frame[2*one_fifth:(2*one_fifth+2*width), gap_6:(gap_6+2*height)] = np.flipud(np.kron(
-            np.argmax(data[frame_idx], axis=2).T,
-            np.ones((2, 2))
-        ))
+        frame[2*one_fifth:(2*one_fifth+2*width), gap_6:(gap_6+2*height)] = ss4
 
         ax.clear()
         ax.imshow(frame, cmap=cmap, aspect='auto', vmin=0, vmax = 255) #vmax=data.shape[-1]

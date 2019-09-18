@@ -43,7 +43,7 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
 
         # some flags for wrapper selection
-        self._data_gen = False
+        self._data_gen = True
         self._use_birdseye = False
 
         print("-----Starting Environment-----")
@@ -306,9 +306,9 @@ class BaseEnv(gym.Env):
                     # obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
                     # print("after resize: " + str(obs_dict[agent.id].shape()))
                     
-                    
-                    cv2.imshow(sensor_id, obs_dict[agent.id][sensor_id])
-                    cv2.waitKey(1)
+                    a = 1
+                    # cv2.imshow(sensor_id, obs_dict[agent.id][sensor_id])
+                    # cv2.waitKey(1)
 
         elif self._use_birdseye:
             obs_dict = dict()
@@ -410,15 +410,12 @@ class BaseEnv(gym.Env):
         if self._agent_type == "continuous":
             reset = dict()
             for any_agent in self._agents:
-                # @git from Moritz
-                # if self._data_gen:
-                #     position = (self.spawnPointGeneratorTown5().location.x,
-                #                 self.spawnPointGeneratorTown5().location.y)
-                # elif self._map=="Town05": # replace with Town05 for manual position
-                #     position = (51.1, 205.3)
-
+                #@git from Moritz
+                if self._data_gen:
+                    position = (self.spawnPointGeneratorTown5().location.x,
+                                self.spawnPointGeneratorTown5().location.y)
                 # @git from Flo
-                if self._map in self._good_spawn_points and not self._data_gen: 
+                elif self._map in self._good_spawn_points: 
                     position = self._good_spawn_points[self._map]
                 else:
                     pos = any_agent._vehicle.get_location()

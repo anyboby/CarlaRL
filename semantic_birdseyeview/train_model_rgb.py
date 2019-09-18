@@ -11,6 +11,7 @@ from utils import get_X_and_Y, get_data_gen, batcher, batcher_rgb, plot_semantic
 
 DECIMATION = 2
 BATCH_SIZE = 10
+AE_FEATURES = None #256
 
 CAMERA_IDS = [
     "FrontSS", "LeftSS", "RightSS", "RearSS", "FrontRGB", "LeftRGB", "RightRGB", "RearRGB", "TopSS"
@@ -80,6 +81,7 @@ all_inputs, all_outputs = next(train_gen)
 rgb_cams, top_ss, ss_cams = all_inputs[:4], all_inputs[4], all_outputs[:4]
 
 input_shape = rgb_cams[0].shape[1:]
+output_shape = input_shape # since 3 class segmenation, output shape is same as rgb input shape
 print(input_shape)
 
 
@@ -118,7 +120,12 @@ def get_conv_encoder_model(
     for i in range(num_layers, 0, -1):
         x = Convolution2D(2**(central_exp+i), (3, 3), activation=act, padding='same')(x)
         x = MaxPooling2D((2, 2), padding='same')(x)
-        
+    
+    ### ----- testing more dense feature vector ------ ###
+    if AE_FEATURES is not None:
+        x = Flatten()(x)
+        x = Dense (AE_FEATURES, activation=act)(x)
+    ### ---------------------------------------------- ###
     return Model(inp, x, name='encoder_submodel')
     
     
@@ -141,7 +148,7 @@ def get_conv_decoder_model(
 
 
 def get_multi_model(
-    input_shape, input_names,
+    input_shape, input_names, output_shape,
     num_ae_layers=4, central_ae_exp=3,
     num_reconstruction_layers=3, central_reconstruction_exp=6,
     act='elu', l2_reg=1e-3,
@@ -161,7 +168,7 @@ def get_multi_model(
     encoded_shape = K.int_shape(encoder_model.output)[1:]
     
     decoder_model = get_conv_decoder_model(
-        encoded_shape, input_shape,
+        encoded_shape, output_shape,
         num_ae_layers, central_ae_exp, act, l2_reg,
     )
     
@@ -181,17 +188,19 @@ def get_multi_model(
     side_cameras = [camera_id for camera_id in INPUT_IDS if 'Top' not in camera_id]
     for inp_name in side_cameras:
         x = Flatten()(all_bottlenecks[inp_name])
-        for _ in range(num_reconstruction_layers-1):
+        for i in range(num_reconstruction_layers-1):
             x = Dense(
                 2**central_reconstruction_exp,
                 activation=act,
                 kernel_regularizer=l2(l2_reg),
+                name = "dense_{}_{}".format(inp_name, i)
             )(x)
-
+            ### Attention ! here is another bottleneck of the side camera images with heavier influence of the birds eye view! ###
         x = Dense(
                 encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
                 activation=act,
                 kernel_regularizer=l2(l2_reg),
+                name = "dense_{}_upscale".format(inp_name)
             )(x)
 
         x = Reshape(encoded_shape)(x)
@@ -210,9 +219,17 @@ def get_multi_model(
         (3, 3),
         activation=act,
         padding='same',
-        name='before_reconstruction',
+        name='before_reconstruction_1',
     )(x)
-                
+
+    if AE_FEATURES is not None:
+        encoded_reconstruction = Flatten()(encoded_reconstruction)
+        encoded_reconstruction = Dense (
+            AE_FEATURES, 
+            activation=act, 
+            name = "before_reconstruction_2"
+        )(encoded_reconstruction)
+
     encoded_diff = Subtract(name='encoded_from_TopSS-encoded_reconstruction')([all_bottlenecks['TopSS'], encoded_reconstruction])
 
     reconstruction = decoder_model(encoded_reconstruction)
@@ -231,21 +248,27 @@ num_ae_layers = 3
 central_ae_exp = 5
 patience = 10
 num_sweeps = 24
-validation_episodes_for_movies = [57, 101]
+validation_episodes_for_movies = [12, 45, 101]
 
-bottleneck_dim = (
+# ls after encoder conv layers
+ls_dim_after_conv = (
     BATCH_SIZE,
     input_shape[0] // 2**num_ae_layers,
     input_shape[1] // 2**num_ae_layers,
     2**(central_ae_exp + 1),
 )
+# ls after encoder flatten and dense if AE_FEATURE LAYER
+ls_dim_after_flat = (BATCH_SIZE, ls_dim_after_conv[1]*ls_dim_after_conv[2]*ls_dim_after_conv[3])
+ls_dim_after_dense = (BATCH_SIZE, AE_FEATURES)
 
+bottleneck_dim = ls_dim_after_dense if AE_FEATURES is not None else ls_dim_after_conv
 print("bottleneck dim: " + str(bottleneck_dim))
 
 zero_array = np.zeros(bottleneck_dim).astype('float32')
 
+
 multi_model = get_multi_model(
-    input_shape, INPUT_IDS,
+    input_shape, INPUT_IDS, output_shape,
     num_ae_layers, central_ae_exp,
     num_reconstruction_layers=3, central_reconstruction_exp=6,
     act='elu', l2_reg=1e-3,
@@ -264,7 +287,7 @@ early_stopping = EarlyStopping(
 
 multi_model.summary()
 
-storage = get_X_and_Y(['Town05'], [108, 109], DECIMATION, CAMERA_IDS)
+storage = get_X_and_Y(['Town05'], [0, 1, 2, 3, 4, 5, 6, 7, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
 X_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' not in id_]
 Y_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' in id_][0]
 valid_gen = batcher_rgb(
@@ -274,7 +297,6 @@ valid_gen = batcher_rgb(
 )
 
 MULTI_MODEL_EPISODES = [
-    range(0, 8),
     range(8, 16),
     range(16, 24),
     range(24, 32),
@@ -284,7 +306,6 @@ MULTI_MODEL_EPISODES = [
     range(56, 64),
     range(72, 80),
     range(88, 96),
-    range(96, 102),
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -372,4 +393,5 @@ for sweep in range(num_sweeps):
                 INPUT_IDS,
                 multi_model,
                 batch_size=BATCH_SIZE,
+                cmap=None
             )

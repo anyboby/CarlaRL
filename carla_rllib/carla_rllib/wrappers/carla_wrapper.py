@@ -424,8 +424,8 @@ class ContinuousWrapper(BaseWrapper):
 class BirdsEyeWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(BirdsEyeWrapper, self).__init__(world, spawn_point, render=render)
-        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
-        # model_filename = "./././semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        #model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
         self.ae = load_model(model_filename)
         self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
                               outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))

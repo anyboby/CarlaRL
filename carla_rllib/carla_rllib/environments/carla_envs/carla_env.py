@@ -386,7 +386,6 @@ class BaseEnv(gym.Env):
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
-<<<<<<< HEAD
         self._current_position = position
         reward = -0.1
         #print("Steering:", steering_change)
@@ -400,13 +399,6 @@ class BaseEnv(gym.Env):
         #print(dist_to_middle_lane**2)
         reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2))
        # print("reward: " + str(reward) + " | " + str((velocity * 0.2)) + " | " + str((dist_to_middle_lane * 0.1)))
-=======
-
-        # dist_to_middle_lane^2 ?
-        reward = -0.1
-        reward = reward + velocity * 0.1 - dist_to_middle_lane * 0.1 - collision_penalty # - steering_change * 0.3 #- invasions_incr * velocity
-        #print(reward)
->>>>>>> a622cc631e48e5c0cea6747a3c0a400c6b28783e
         return reward
 
     def _is_done(self):

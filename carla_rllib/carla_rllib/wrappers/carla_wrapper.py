@@ -512,7 +512,6 @@ class BirdsEyeWrapper(ContinuousWrapper):
         if not self._simulate_physics:
             self._togglePhysics()
 
-
     def _get_sensor_data(self, frame, timeout):
         """Retrieve sensor data"""
         data = np.asarray([s.retrieve_data(frame, timeout)
@@ -600,6 +599,7 @@ class DataGeneratorWrapper(ContinuousWrapper):
     def _start(self, spawn_point, actor_model=None, actor_name=None):
         super(DataGeneratorWrapper, self)._start(spawn_point)
         # Set up sensors
+        self._autopilot = False
         self._sensors = []
         self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=200, height=300,
@@ -632,7 +632,7 @@ class DataGeneratorWrapper(ContinuousWrapper):
         self._sensors.append(CollisionSensor(self._vehicle))
 
         # set autopilot for data generation
-        self._vehicle.set_autopilot(True)
+        self._vehicle.set_autopilot(self._autopilot)
         self._frames_standing = 0
     def reset(self, reset):
         """Reset position and controls as well as sensors and state
@@ -695,7 +695,7 @@ class DataGeneratorWrapper(ContinuousWrapper):
         #         or self.state.elapsed_ticks >= 100000):   # @MORITZ TODO maybe uncomment back to 1000
         #     print("terminating!")
         if (self.state.collision or
-            self.state.distance_to_center_line > 1.8     # @MORITZ TODO maybe uncomment back to 1.8
+            self.state.distance_to_center_line > 20     # @MORITZ TODO maybe uncomment back to 1.8
                 or self.state.elapsed_ticks >= 5000):   # @MORITZ TODO maybe uncomment back to 1000
             return True
         else:

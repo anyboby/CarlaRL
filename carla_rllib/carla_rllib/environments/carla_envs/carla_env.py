@@ -22,13 +22,14 @@ import carla
 import gym
 import pygame
 import numpy as np
+import cv2
 from pygame.locals import K_ESCAPE
 from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
 from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
 from carla_rllib.wrappers.carla_wrapper import BirdsEyeWrapper
-
+import carla_rllib.utils.reward_functions as rew_util
 
 from matplotlib import pyplot as plt
 import cv2
@@ -342,15 +343,17 @@ class BaseEnv(gym.Env):
             # PLOTTING - Be careful, this is slow!
             plot = False
             if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
-                plt.ion()
-                plt.show()
-                plt.imshow(obs_dict["Agent_1"], cmap="gray")
-                plt.draw()
-                plt.pause(0.01)
+                from PIL import Image
+                im = Image.fromarray(obs_dict["Agent_1"] * 255)
+                im.show()
+
+                #plt.ion()
+                #plt.show()
+                #plt.imshow(obs_dict["Agent_1"], cmap="gray")
+                #plt.draw()
+                #plt.pause(0.01)
 
             obs_dict["Agent_1"] = obs_dict["Agent_1"].reshape(obs_dict["Agent_1"].shape[0],obs_dict["Agent_1"].shape[1],1)
-            #print(obs_dict["Agent_1"].shape)
-            #print("after reshape: " + str(obs_dict[agent.id].shape))
 
         return obs_dict
 
@@ -368,8 +371,8 @@ class BaseEnv(gym.Env):
         invasions_incr = lane_invasion - self.lane_invasion
         steering_change = 0
         position_change = 0
-        if not self._prev_action is None:
-            steering_change = abs(current_steering - self._prev_action[0])
+        #if not self._prev_action is None:
+        steering_change = abs(current_steering) #penalty for steering at all -self._prev_action[0]
         if not self._current_position is None:
             position_change = abs(position[0] - self._current_position[0]) + abs(position[1] - self._current_position[1])
         # Hotfix because on collision this value is set negative
@@ -385,13 +388,23 @@ class BaseEnv(gym.Env):
         self._prev_action = self._action
         self._current_position = position
         reward = -0.1
-        reward = reward + velocity * 0.15 + position_change  - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.1 #- invasions_incr * velocity
-        #print(reward)
+        #print("Steering:", steering_change)
+        #print("Collision:", collision_penalty)
+        #print("Dist to mid:", dist_to_middle_lane)
+        #print("Lane invasion:", invasions_incr)
+        #print("Velocity:", velocity)
+        #print("Pos change:", position_change)
+        #reward = reward + velocity * 0.1 + position_change * 0.5  - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.1 - invasions_incr * 10
+        #print(rew_util.reward_1(agent.state.distance_to_center_line, agent.state.delta_heading, agent.state.current_speed))
+        #print(dist_to_middle_lane**2)
+        reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2))
+       # print("reward: " + str(reward) + " | " + str((velocity * 0.2)) + " | " + str((dist_to_middle_lane * 0.1)))
         return reward
 
     def _is_done(self):
         """Return the current terminal condition"""
         done_dict = dict()
+
         for agent in self._agents:
             done_dict[agent.id] = agent.state.terminal
         return done_dict

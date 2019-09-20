@@ -12,9 +12,9 @@
         "height": 1000,
         "fov": 100
     },
-    "policy_checkpoint": "../stable_baselines/carla_ppo.pkl",
+    "policy_checkpoint": "carla_ppo.pkl",
     "debug": {
         "enabled": true,
-        "input_camera": false,
+        "input_camera": true,
         "resize": [756, 756]}
 }

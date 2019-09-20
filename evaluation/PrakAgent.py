@@ -12,6 +12,9 @@ import cv2
 import numpy as np
 import json
 from stable_baselines import PPO2
+import sys
+import glob
+import os
 try:
     sys.path.append(glob.glob('%s/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
         os.environ["CARLA_ROOT"],
@@ -26,7 +29,8 @@ try:
     import pygame
     from pygame.locals import K_DOWN
     from pygame.locals import K_LEFT
-    from pygame.locals import K_RIGHTecho $C
+
+    from pygame.locals import K_RIGHT
     from pygame.locals import K_SPACE
     from pygame.locals import K_UP
     from pygame.locals import K_a
@@ -63,6 +67,7 @@ class PrakAgent(AutonomousAgent):
         self._debug = config["debug"]["enabled"]
 
         # Agent setup
+        
         if not self._debug:
             hero_actor = None
             for actor in CarlaDataProvider.get_world().get_actors():
@@ -233,6 +238,7 @@ class HumanInterface(object):
                 image.swapaxes(0, 1))
             if self._surface is not None:
                 self._display.blit(self._surface, (0, 0))
+            print("display")
             pygame.display.flip()
 
         pygame.quit()

@@ -14,7 +14,18 @@ and finally triggers the scenario execution.
 """
 from __future__ import print_function
 import sys
+import glob
+import os
 sys.path.append('../')
+
+try:
+    sys.path.append(glob.glob('%s/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+        os.environ["CARLA_ROOT"],
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
 
 import traceback
 import argparse

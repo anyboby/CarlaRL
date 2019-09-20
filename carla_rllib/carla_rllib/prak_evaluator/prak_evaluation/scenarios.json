@@ -1,0 +1,42 @@
+{
+    "available_scenarios": [
+        {
+            "Town05": [
+                {
+                    "available_event_configurations": [
+                        {
+                            "transform": {
+                                "pitch": "-0.20123101770877838",
+                                "x": "47.24352264404297",
+                                "y": "-145.9805450439453",
+                                "yaw": "2.5311660766601562",
+                                "z": "1.0"
+                            }
+                        }
+                    ],
+                    "scenario_type": "Scenario3"
+                },
+                {
+                    "available_event_configurations": [
+                        {
+                            "transform": {
+                                "pitch": "0.0026569433975964785",
+                                "x": "42.734130859375",
+                                "y": "145.2400665283203",
+                                "yaw": "1.4500408172607422",
+                                "z": "1.0"
+                            }
+                        }
+                    ],
+                    "scenario_type": "Scenario2"
+                }
+            ],
+            "Town07": [
+                {
+                    "available_event_configurations": [],
+                    "scenario_type": "Scenario0"
+                }
+            ]
+        }
+    ]
+}

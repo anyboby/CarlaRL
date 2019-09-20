@@ -69,19 +69,31 @@ try:
                 action, _states = model.predict(obs)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
-        if MODE == "PPO": # Not working yet
+        if MODE == "PPO": 
             from stable_baselines.common.policies import CnnPolicy
             from stable_baselines.common.policies import MlpPolicy
             from stable_baselines.common.policies import CnnLnLstmPolicy
             from stable_baselines import PPO2
+            
+            learning_rate = 0.001
+            def getLearningRate():
+                global learning_rate
+                learning_rate = learning_rate * 0.99
+                print(learning_rate)
+                return learning_rate
+
             env = DummyVecEnv([lambda: env])
             env = VecFrameStack(env, n_stack=4)
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.001, n_steps=512, cliprange=0.1, noptepochs=2, nminibatches=1)
-            model.learn(total_timesteps=400000)
-            model.save("carla_ppo")
+            #model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
+            
+            #model = PPO2.load("carla_ppo")
+            #model.set_env(env)
+            #model.learn(total_timesteps=500000)
+            #model.save("carla_ppo_19_09_2019")
+            model = PPO2.load("carla_ppo_19_09_2019")
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)

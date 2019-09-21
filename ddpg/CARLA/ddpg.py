@@ -22,12 +22,12 @@ class DDPG:
         self.action_size = action_size
         self.gamma = 0.99
         # TODO: Dynamisch (nur falls alle gleich trainieren) bzw. höhere Lernrate
-        self.learning_rate = 0.0005
+        self.learning_rate = 0.001
         # Create actor and critic networks
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(100000)
-        self.steps = 200
+        self.steps = 10000
         self.noise_decay = 0.999
 
     def policy_action(self, s):
@@ -134,7 +134,7 @@ class DDPG:
                 self.memorize(old_state, a, r, done, new_state)
                 # Update every batch_size steps
                 # TODO!!!!!!!!!!!!!!!!!!! BADGES TRAINIEREN
-                if self.buffer.count > batch_size and False:
+                if self.buffer.count > batch_size:
                     states, actions, rewards, dones, new_states, _ = self.sample_batch(batch_size)
                     q_values = self.critic.target_predict([new_states, self.actor.target_predict(new_states)])
                     critic_target = self.bellman(rewards, q_values, dones)

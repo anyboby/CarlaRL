@@ -601,6 +601,12 @@ class FrontAEWrapper(ContinuousWrapper):
         super(FrontAEWrapper, self).__init__(world, spawn_point, render=render)
         model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
         self.ae = load_model(model_filename)
+        # --- extract intermediate layer that contains latent space ---- #
+        encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")
+        encoded_in = self.ae.get_input_at(0)[0]
+        encoded_out = encoder_layer.output
+        self.functor = K.function([encoded_in], [encoded_out])
+
         # self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
         #                       outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
 
@@ -771,18 +777,12 @@ class FrontAEWrapper(ContinuousWrapper):
         #     cv2.waitKey(1)
 
         ae_input = X_final + [y_final]
-        
+        front_ss_encoded = self.functor([ae_input[0]])[0][0]
+
         # --- predictions not needed for latent space extaction ----
         # 
         # preds = self.ae.predict(ae_input, batch_size=1)
         # reconstructed_ss = preds[0]
-
-        # --- extract intermediate layer that contains latent space ---- #
-        encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")
-        encoded_in = self.ae.get_input_at(0)[0]
-        encoded_out = encoder_layer.output
-        functor = K.function([encoded_in], [encoded_out])
-        front_ss_encoded = functor([ae_input[0]])[0][0]
         
         # # visualize latent space vector
         # reshaped_test = front_ss_encoded.reshape(8,8,1)

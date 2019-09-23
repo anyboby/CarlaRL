@@ -45,7 +45,7 @@ class BaseEnv(gym.Env):
 
         # some flags for wrapper selection, only use one
         self._data_gen = False
-        self._use_front_ae = False
+        self._use_front_ae = True
         self._use_birdseye = False
         data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (1,12,18,64) 
 

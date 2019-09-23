@@ -32,7 +32,7 @@ try:
     print(obs.shape)
     ddpg = DDPG((64, 64, 1), 2, 10)
     #ddpg.load_weights('_LR_0.0005_actor.h5', '_LR_0.0005_critic.h5')
-    ddpg.train(env, render=True, batch_size=64, nb_episodes=10000)
+    ddpg.train(env, render=True, batch_size=64, nb_episodes=100000)
 finally:
     env.close()
     print("-----Carla Environment is closed-----")

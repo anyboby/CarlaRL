@@ -34,9 +34,9 @@ class Actor:
         
         state = Input((self.state_size))
         # Convolutions
-        x = Conv2D(20, kernel_size=4, activation='relu', input_shape=self.state_size)(state)
+        x = Conv2D(64, kernel_size=4, activation='relu', input_shape=self.state_size)(state)
         x = MaxPool2D(pool_size=(2, 2))(x)
-        x = Conv2D(40, kernel_size=4, activation='relu') (x)
+        x = Conv2D(64, kernel_size=4, activation='relu') (x)
         x = MaxPool2D(pool_size=(2, 2))(x)
         
         # Connect convolution and dense layers

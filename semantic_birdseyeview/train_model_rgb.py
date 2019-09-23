@@ -8,7 +8,6 @@ import time
 import matplotlib.pyplot as plt
 from utils import get_X_and_Y, get_data_gen, batcher, batcher_rgb, plot_semantic, make_movie
 
-
 DECIMATION = 2
 BATCH_SIZE = 10
 AE_FEATURES = None #256
@@ -298,14 +297,14 @@ valid_gen = batcher_rgb(
 
 MULTI_MODEL_EPISODES = [
     range(8, 16),
-    range(16, 24),
-    range(24, 32),
-    range(32, 40),
-    range(40,48),
-    range(48, 56),
-    range(56, 64),
-    range(72, 80),
-    range(88, 96),
+    # range(16, 24),
+    # range(24, 32),
+    # range(32, 40),
+    # range(40,48),
+    # range(48, 56),
+    # range(56, 64),
+    # range(72, 80),
+    # range(88, 96),
 ]
 
 # I've also tried our a recurrent model, for which I used

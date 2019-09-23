@@ -29,6 +29,7 @@ from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
 from carla_rllib.wrappers.carla_wrapper import ContinuousWrapper
 from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
 from carla_rllib.wrappers.carla_wrapper import BirdsEyeWrapper
+from carla_rllib.wrappers.carla_wrapper import FrontAEWrapper
 import carla_rllib.utils.reward_functions as rew_util
 
 from matplotlib import pyplot as plt
@@ -42,9 +43,11 @@ class BaseEnv(gym.Env):
 
     def __init__(self, config):
 
-        # some flags for wrapper selection
+        # some flags for wrapper selection, only use one
         self._data_gen = False
-        self._use_birdseye = True
+        self._use_front_ae = True
+        self._use_birdseye = False
+        data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (1,12,18,64) 
 
         print("-----Starting Environment-----")
         # Read config
@@ -57,7 +60,15 @@ class BaseEnv(gym.Env):
         self._port = config.port
         self._map = config.map
         self._num_agents = config.num_agents
-        self._obs_shape = (1,12,18,64) if self._use_birdseye else (64,64,1) 
+        self._obs_shape = (64,64,1)
+        if self._use_front_ae:
+            self._obs_shape = front_ae_shape
+        elif self._use_birdseye:
+            self._obs_shape = birdseye_shape
+        elif self._data_gen:
+            self._obs_shape = data_gen_shape
+
+
         self._cum_reward = 0
         self._prev_action = None
         self._action = None
@@ -121,6 +132,12 @@ class BaseEnv(gym.Env):
                 self._agents.append(BirdsEyeWrapper(self.world,
                                                       self.spawn_points[random.randint(0,len(self.spawn_points))],
                                                       self._render_enabled))
+
+        elif self._use_front_ae:
+            for n in range(self._num_agents):
+                self._agents.append(FrontAEWrapper(self.world,
+                                                      self.spawn_points[random.randint(0,len(self.spawn_points))],
+                                                      self._render_enabled))                                                
         
         elif self._agent_type == "continuous":
             # Good spawn points for training:
@@ -327,6 +344,15 @@ class BaseEnv(gym.Env):
 
             return obs_dict
 
+        elif self._use_front_ae:
+            obs_dict = dict()                                        
+            for agent in self._agents:
+                obs_dict[agent.id] = agent.state.image
+            # cv2.imshow("test", obs_dict["Agent_1"])
+            # cv2.waitKey(1)
+
+            return obs_dict
+
         else:
             # Extract observations for agents
             obs_dict = dict()
@@ -337,8 +363,8 @@ class BaseEnv(gym.Env):
                 #print("after resize: " + str(obs_dict[agent.id].shape))
             
             #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
-            #cv2.imshow("image", obs_dict["Agent_1"])
-            #cv2.waitKey(1)
+            # cv2.imshow("image", obs_dict["Agent_1"])
+            # cv2.waitKey(1)
 
             # PLOTTING - Be careful, this is slow!
             plot = False

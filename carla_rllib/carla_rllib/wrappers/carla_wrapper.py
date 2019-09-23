@@ -29,6 +29,8 @@ from carla_rllib.wrappers.sensors import SegmentationSensor,SegmentationSensorCu
 from carla_rllib.wrappers.states import BaseState
 from keras.models import load_model
 from keras.models import Model
+from keras import backend as K
+import cv2
 
 VEHICLE_MODELS = ['vehicle.audi.a2',
                   'vehicle.audi.tt',
@@ -424,8 +426,8 @@ class ContinuousWrapper(BaseWrapper):
 class BirdsEyeWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(BirdsEyeWrapper, self).__init__(world, spawn_point, render=render)
-        #model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
-        model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
+        #model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
         self.ae = load_model(model_filename)
         self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
                               outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
@@ -593,6 +595,209 @@ class BirdsEyeWrapper(ContinuousWrapper):
         if self.state.collision: self.state.collisions += 1
         self.state.lane_invasion = data[2]
 
+
+class FrontAEWrapper(ContinuousWrapper):
+    def __init__(self, world, spawn_point, render=False):
+        super(FrontAEWrapper, self).__init__(world, spawn_point, render=render)
+        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
+        self.ae = load_model(model_filename)
+        # self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
+        #                       outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
+
+    def _start(self, spawn_point, actor_model=None, actor_name=None):
+        """Spawn actor and initialize sensors"""
+        # Get (random) blueprint
+        if actor_model:
+            blueprint = self._world.get_blueprint_library().find(actor_model)
+        else:
+            blueprint = np.random.choice(
+                self._world.get_blueprint_library().filter("vehicle.*"))
+        if actor_name:
+            blueprint.set_attribute('role_name', actor_name)
+        if blueprint.has_attribute('color'):
+            color = np.random.choice(
+                blueprint.get_attribute('color').recommended_values)
+            blueprint.set_attribute('color', color)
+        if blueprint.has_attribute('is_invincible'):
+            blueprint.set_attribute('is_invincible', 'true')
+        # Spawn vehicle
+        self._vehicle = self._world.spawn_actor(blueprint, spawn_point)
+        self._carla_id = self._vehicle.id
+        IMAGE_SHAPE = (200,300)
+
+        # Set up sensors
+        self._sensors.append(RgbSensor(self._vehicle,
+                                                width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+                                                orientation=[1, 3, -10, 0], id="FrontRGB"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[0, 3, -10, -45], id="LeftSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[0, 3, -10, 45], id="RightSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=[1], height=IMAGE_SHAPE[0],
+        #                                         orientation=[-1, 3, -10, 180], id="RearSS"))
+        # self._sensors.append(SegmentationSensorTags(self._vehicle,
+        #                                         width=IMAGE_SHAPE[0], height=IMAGE_SHAPE[1],
+        #                                         orientation=[0, 40, -90, 0], id="TopSS"))                                                
+
+        self._sensors.append(CollisionSensor(self._vehicle))
+        self._sensors.append(LaneInvasionSensor(self._vehicle))
+
+    def reset(self, reset):
+        """Reset position and controls as well as sensors and state
+
+        reset = dict(
+            position=[x, y],
+            yaw=rotation,
+            steer=steer,
+            acceleration=acceleration
+        )
+
+        """
+        # position
+        transform = carla.Transform(
+            carla.Location(reset["position"][0], reset["position"][1]),
+            carla.Rotation(yaw=reset["yaw"])
+        )
+        self._vehicle.set_transform(transform)
+        # controls
+        self._vehicle.set_velocity(carla.Vector3D(0, 0, 0))
+        self._vehicle.set_angular_velocity(carla.Vector3D(0, 0, 0))
+        control = self._vehicle.get_control()
+        control.steer = reset["steer"]
+        if reset["acceleration"] >= 0:
+            control.brake = 0
+            control.throttle = reset["acceleration"]
+        else:
+            control.throttle = 0
+            control.brake = -reset["acceleration"]
+        self._vehicle.apply_control(control)
+        # sensors and state
+        self._sensors[1].reset()
+        self._sensors[2].reset()
+        self.state.collisions = 0
+        self.state.terminal = False
+        self.state.position = (reset["position"][0],
+                               reset["position"][1])
+
+        # Enable simulation physics if disabled
+        if not self._simulate_physics:
+            self._togglePhysics()
+
+    def _get_sensor_data(self, frame, timeout):
+        """Retrieve sensor data"""
+        data = np.asarray([s.retrieve_data(frame, timeout)
+                for s in self._sensors])
+        trim_to_be_divisible_by = 8
+        decimation = 2
+        
+        cam_data = data[:-2]
+        dec_data = [x[::decimation, ::decimation] for x in cam_data]
+        # debug block
+        # print("decimated data: " + str(dec_data[0].shape))
+        # cv2.imshow("testdec", dec_data[0])
+        # cv2.waitKey(1)
+
+        def trim(x, trim_to_be_divisible_by):
+            height, width = x.shape[0:2]
+
+            divisor = trim_to_be_divisible_by  # Easier to read
+            remainder = height % divisor
+            top_trim, bottom_trim = floor(remainder / 2), ceil(remainder / 2)
+
+            remainder = width % divisor
+            left_trim, right_trim = floor(remainder / 2), ceil(remainder / 2)
+
+            return x[bottom_trim:(height-top_trim), left_trim:(width-right_trim)].astype('uint8')
+
+        def extract_observation_for_batch(X, y, index, flip, classes_numbers):
+            X_out = [x[..., index] for x in X]
+            y_out = y[..., index]
+
+            if flip:
+                X_out = [np.fliplr(x) for x in X_out]
+                X_out[1], X_out[2] = X_out[2], X_out[1]
+                y_out = np.fliplr(y_out)
+
+            # After mirror flipping we can transpose `y`
+            y_out = np.fliplr(np.transpose(y_out, [1, 0, 2]))
+
+            #unwrap from 1 channel SS to number of classes (only if X/Y is ss with 1 channel)
+            for i in range(len(X_out)):
+                X_out[i] = unwrap_to_ohe(X_out[i], classes_numbers) if X_out[i].shape[2] is 1 else X_out[i] 
+            #X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
+            y_out = unwrap_to_ohe(y_out, classes_numbers)
+
+            return X_out, y_out
+
+        def unwrap_to_ohe(x, classes_numbers):
+            x = np.stack([
+                np.where(np.isin(x, classes_numbers[i]), 1, 0).astype(np.uint8)
+                for i in range(len(classes_numbers))
+            ])
+            return np.transpose(x[..., 0], [1, 2, 0])
+
+        trimmed_data = np.expand_dims(np.asarray(trim(dec_data[0], trim_to_be_divisible_by)), axis=3)
+        
+        # debug block
+        # print("trimmed_data " + str(trimmed_data[:,:,:,0].shape))
+        # cv2.imshow("testtrim", trimmed_data[:,:,:,0])
+        # cv2.waitKey(1)
+
+        classes_numbers = class_names_to_class_numbers(CLASSES_NAMES)
+
+        zeros = np.expand_dims(np.zeros((96,144,3), dtype="uint8"), axis=3)
+
+        X = [trimmed_data, zeros, zeros, zeros]
+        Y = np.zeros((144,96,3,1))
+
+        X_final, y_final = [[] for _ in range(len(X))], []
+        X_out, y_out = extract_observation_for_batch(X, Y, 0, False, classes_numbers)
+        for j in range(len(X_final)):
+            X_final[j].append(X_out[j])
+        y_final.append(y_out)
+
+        X_final = [np.stack(x) for x in X_final]
+        y_final = np.stack(y_final)
+
+        # debug block
+        # print("X_final[0] " + str(X_final[0].shape))
+        # print("X_final[0][0] " + str(X_final[0][0].shape))
+
+        # for i in range(len(X_final)):
+        #     cv2.imshow("test" + str(i), X_final[i][0])
+        #     cv2.waitKey(1)
+
+        ae_input = X_final + [y_final]
+        
+        # --- predictions not needed for latent space extaction ----
+        # 
+        # preds = self.ae.predict(ae_input, batch_size=1)
+        # reconstructed_ss = preds[0]
+
+        # --- extract intermediate layer that contains latent space ---- #
+        encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")
+        encoded_in = self.ae.get_input_at(0)[0]
+        encoded_out = encoder_layer.output
+        functor = K.function([encoded_in], [encoded_out])
+        front_ss_encoded = functor([ae_input[0]])[0][0]
+        
+        # # visualize latent space vector
+        # reshaped_test = front_ss_encoded.reshape(8,8,1)
+        # cv2.imshow("latent", reshaped_test)
+        # cv2.waitKey(1)
+
+        # debug block
+        # cv2.imshow("testpreds", front_ss_encoded[0])
+        # cv2.waitKey(1)
+        #print(front_ss_encoded.shape)
+        
+        self.state.image = front_ss_encoded
+        self.state.collision = data[1]
+        if self.state.collision: self.state.collisions += 1
+        self.state.lane_invasion = data[2]
 
 class DataGeneratorWrapper(ContinuousWrapper):
 

@@ -87,13 +87,13 @@ try:
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            #model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
+            model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
             
             #model = PPO2.load("carla_ppo")
-            #model.set_env(env)
-            #model.learn(total_timesteps=500000)
-            #model.save("carla_ppo_19_09_2019")
-            model = PPO2.load("carla_ppo_19_09_2019")
+            model.set_env(env)
+            model.learn(total_timesteps=500000)
+            model.save("carla_ppo_19_09_2019")
+            # model = PPO2.load("carla_ppo_19_09_2019")
             obs = env.reset()
             while True:
                 action, _states = model.predict(obs)

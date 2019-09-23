@@ -61,7 +61,7 @@ if __name__ == "__main__":
             action = [s, a]
             obs, reward, done, info = env.step(action)
             clock.tick(5)
-            print(env._agents[0].state)
+            #print(env._agents[0].state)
 
             y +=1
             if y%2 == 0:

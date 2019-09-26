@@ -23,6 +23,7 @@ import gym
 import pygame
 import numpy as np
 import cv2
+import random
 from pygame.locals import K_ESCAPE
 from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
@@ -45,7 +46,7 @@ class BaseEnv(gym.Env):
 
         # some flags for wrapper selection, only use one
         self._data_gen = False
-        self._use_front_ae = True
+        self._use_front_ae = False
         self._use_birdseye = False
         data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (1,12,18,64) 
 
@@ -72,7 +73,7 @@ class BaseEnv(gym.Env):
         self._cum_reward = 0
         self._prev_action = None
         self._action = None
-        self._good_spawn_points = {  #Note: Town7 needs to be downloaded
+        self._good_spawn_points = { 
             "Town05" : (51.1, 205.3)
         }
         self._current_position = None
@@ -392,6 +393,7 @@ class BaseEnv(gym.Env):
         dist_to_middle_lane = agent.state.distance_to_center_line
         current_steering = self._action[0]
         position = agent.state.position        
+        delta_heading = agent.state.delta_heading
 
         # Calculate temporal differences and penalty values
         invasions_incr = lane_invasion - self.lane_invasion
@@ -414,17 +416,8 @@ class BaseEnv(gym.Env):
         self._prev_action = self._action
         self._current_position = position
         reward = -0.1
-        #print("Steering:", steering_change)
-        #print("Collision:", collision_penalty)
-        #print("Dist to mid:", dist_to_middle_lane)
-        #print("Lane invasion:", invasions_incr)
-        #print("Velocity:", velocity)
-        #print("Pos change:", position_change)
-        #reward = reward + velocity * 0.1 + position_change * 0.5  - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.1 - invasions_incr * 10
-        #print(rew_util.reward_1(agent.state.distance_to_center_line, agent.state.delta_heading, agent.state.current_speed))
-        #print(dist_to_middle_lane**2)
-        reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2))
-       # print("reward: " + str(reward) + " | " + str((velocity * 0.2)) + " | " + str((dist_to_middle_lane * 0.1)))
+        reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2 - 0.4 * abs(delta_heading)))
+        print("reward: " + str(reward))
         return reward
 
     def _is_done(self):
@@ -456,13 +449,14 @@ class BaseEnv(gym.Env):
                     position = (self.spawnPointGeneratorTown5().location.x,
                                 self.spawnPointGeneratorTown5().location.y)
                 # @git from Flo
-                elif self._map in self._good_spawn_points: 
-                    position = self._good_spawn_points[self._map]
-                else:
-                    pos = any_agent._vehicle.get_location()
-                    position = (pos.x, pos.y)
+                spawnpoint = self.spawnPointGeneratorScenarioRunner()
+                position = spawnpoint[0]
+                yaw = spawnpoint[1]
+#                else:
+#                    pos = any_agent._vehicle.get_location()
+#                    position = (pos.x, pos.y)
                 reset[any_agent.id]=dict(position=position,
-                             yaw=0,
+                             yaw=yaw,
                              steer=0,
                              acceleration=-1.0)
             # commented by @Moritz 
@@ -544,3 +538,18 @@ class BaseEnv(gym.Env):
         spawn_point = self.spawn_points[spawn_ind]
         print("generated spawn_point: " + str(spawn_point) + ", numbeR: " + str(spawn_ind))
         return spawn_point
+
+    """
+    returns spawn points of the scenarioRunner
+    """
+    def spawnPointGeneratorScenarioRunner(self):
+        if (self._map == "Town05"):
+            spawns = [[(47.24352264404297, -145.9805450439453), 2.5311660766601562], [(42.734130859375, 145.2400665283203), 1.4500408172607422]]
+            spawn = random.choice(spawns)
+            return spawn
+        elif (self._map == "Town07"):
+            spawns = [[(72.23163604736328, -7.422206878662109), 62.16304397583008], [(-15.64913558959961, -243.93333435058594), -169.06280517578125]]
+            spawn = random.choice(spawns)
+            return spawn
+        else:
+            raise Exception("Map not supported yet")

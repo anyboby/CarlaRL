@@ -409,15 +409,16 @@ class BaseEnv(gym.Env):
         dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 10
+            collision_penalty = 20
         # Update memory values
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
         self._current_position = position
+        #print(dist_to_middle_lane**2)
         reward = -0.1
-        reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2 - 0.4 * abs(delta_heading)))
-        print("reward: " + str(reward))
+        reward = 0.05 * (reward + velocity * 0.3 - collision_penalty - (dist_to_middle_lane**2) - 0.2 * abs(delta_heading))
+        #print("reward: " + str(reward))
         return reward
 
     def _is_done(self):

@@ -298,7 +298,7 @@ class BaseWrapper(object):
         # Note: distance to center line depends on the town!
 
         if (self.state.collision or
-            self.state.elapsed_ticks >= 5000):   
+            self.state.elapsed_ticks >= 2000):   
             return True
         else:
             return False
@@ -352,7 +352,7 @@ class ContinuousWrapper(BaseWrapper):
         # Set up sensors
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=1000, height=1000,
-                                                orientation=[0, 40, -90, 0]))
+                                                orientation=[0, 20, -90, 0]))
 
 
         self._sensors.append(CollisionSensor(self._vehicle))

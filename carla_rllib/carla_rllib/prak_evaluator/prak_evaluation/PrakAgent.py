@@ -120,8 +120,17 @@ class PrakAgent(AutonomousAgent):
         return sensors
 
 
-    def preprocess(input_data):
-        # TODO
+    def preprocess(self, input_data):
+        input_data = input_data[...,0]
+        input_data = cv2.resize(input_data, (64,64))
+        input_data = np.stack((input_data,input_data, input_data,input_data), axis=2)
+        # TODO:
+        # Preprocessing für latent space
+        # 4 Kameras als input
+        # AE dazwischenschalten
+        
+        
+        return(input_data)
 
     def run_step(self, camera_data, timestamp):
         """
@@ -135,8 +144,9 @@ class PrakAgent(AutonomousAgent):
             input_data = input_data[:, :, :3]
             input_data = input_data[:, :, ::-1]
             input_data = self.preprocess(input_data)
-            steer, acceleration = self._policy.predict(input_data) # TODO: use your policy to predict actions
-
+            prediction = self._policy.predict(input_data) # TODO: use your policy to predict actions
+            steer = float(prediction[0][0])
+            acceleration = float(prediction[0][1])
             control = carla.VehicleControl()
             control.steer = steer
             control.hand_brake = False

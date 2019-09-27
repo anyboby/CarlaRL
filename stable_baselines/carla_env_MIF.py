@@ -87,6 +87,7 @@ try:
             # Allow less clipping
             # Increased learning rate
             # Faster updates
+<<<<<<< HEAD
             model = PPO2(MlpPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.00015, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.97)
             
             #model = PPO2.load("carla_ppo")
@@ -99,6 +100,24 @@ try:
                 action, _states = model.predict(obs)
                 obs, rewards, dones, info = env.step(action)
                 env.render()
+=======
+            MODE = "RUN"
+            MODEL_NAME = "carla_ppo_26_09_2019"
+
+            if MODE == "LEARN":
+                model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0002, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
+                model.learn(total_timesteps=500000)
+                model.save(MODEL_NAME)
+
+            if MODE == "RUN":
+                model = PPO2.load(MODEL_NAME)
+                model.set_env(env)
+                obs = env.reset()
+                while True:
+                    action, _states = model.predict(obs)
+                    obs, rewards, dones, info = env.step(action)
+                    env.render()
+>>>>>>> 5d26524d8acb5576e0537b171c797e20f654dce5
         if MODE == "SAC":
             from stable_baselines.sac.policies import CnnPolicy
             from stable_baselines import SAC

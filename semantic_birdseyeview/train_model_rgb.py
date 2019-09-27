@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from utils import get_X_and_Y, get_data_gen, batcher, batcher_rgb, plot_semantic, make_movie
 
 DECIMATION = 2
-BATCH_SIZE = 10
+BATCH_SIZE = 8
 AE_FEATURES = None #256
 
 CAMERA_IDS = [
@@ -146,6 +146,34 @@ def get_conv_decoder_model(
     return Model(inp, x, name='decoder_submodel')
 
 
+def weighted_categorical_crossentropy(weights):
+    """
+    A weighted version of keras.objectives.categorical_crossentropy
+    
+    Variables:
+        weights: numpy array of shape (C,) where C is the number of classes
+    
+    Usage:
+        weights = np.array([0.5,2,10]) # Class one at 0.5, class 2 twice the normal weights, class 3 10x.
+        loss = weighted_categorical_crossentropy(weights)
+        model.compile(loss=loss,optimizer='adam')
+    """
+    
+    weights = K.variable(weights)
+        
+    def loss(y_true, y_pred):
+        # scale predictions so that the class probas of each sample sum to 1
+        y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
+        # clip to prevent NaN's and Inf's
+        y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+        # calc
+        loss = y_true * K.log(y_pred) * weights
+        loss = -K.sum(loss, -1)
+        return loss
+    
+    return loss
+
+
 def get_multi_model(
     input_shape, input_names, output_shape,
     num_ae_layers=4, central_ae_exp=3,
@@ -265,6 +293,9 @@ print("bottleneck dim: " + str(bottleneck_dim))
 
 zero_array = np.zeros(bottleneck_dim).astype('float32')
 
+weights_loss = np.array([0.18,0.18,0.64])
+weighted_ce_loss =  weighted_categorical_crossentropy(weights_loss)
+
 
 multi_model = get_multi_model(
     input_shape, INPUT_IDS, output_shape,
@@ -273,7 +304,8 @@ multi_model = get_multi_model(
     act='elu', l2_reg=1e-3,
 )
 multi_model.compile(
-    loss=6*['categorical_crossentropy'] + ['mse'],
+    #loss=6*['categorical_crossentropy'] + ['mse'],
+    loss=6*[weighted_ce_loss] + ['mse'],
     loss_weights=5*[1] + [1] + [1],
     optimizer=Adam(1e-4)
 )
@@ -297,14 +329,14 @@ valid_gen = batcher_rgb(
 
 MULTI_MODEL_EPISODES = [
     range(8, 16),
-    # range(16, 24),
-    # range(24, 32),
-    # range(32, 40),
-    # range(40,48),
-    # range(48, 56),
-    # range(56, 64),
-    # range(72, 80),
-    # range(88, 96),
+    range(16, 24),
+    range(24, 32),
+    range(32, 40),
+    range(40,48),
+    range(48, 56),
+    range(56, 64),
+    range(72, 80),
+    range(88, 96),
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -383,14 +415,16 @@ for sweep in range(num_sweeps):
 
     for racetrack in ['Town05']:
         for episode in validation_episodes_for_movies:
-            make_movie(
-                model_filename,
-                racetrack,
-                episode,
-                DECIMATION,
-                CLASSES_NAMES,
-                INPUT_IDS,
-                multi_model,
-                batch_size=BATCH_SIZE,
-                cmap=None
-            )
+            try:
+                make_movie(
+                    model_filename,
+                    racetrack,
+                    episode,
+                    DECIMATION,
+                    CLASSES_NAMES,
+                    INPUT_IDS,
+                    multi_model,
+                    batch_size=BATCH_SIZE,
+                    cmap=None
+                )
+            except: print("could not make movie")

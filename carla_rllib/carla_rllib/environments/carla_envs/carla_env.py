@@ -22,7 +22,6 @@ import carla
 import gym
 import pygame
 import numpy as np
-import cv2
 from pygame.locals import K_ESCAPE
 from gym.spaces import Box, Dict
 from carla_rllib.wrappers.carla_wrapper import DiscreteWrapper
@@ -348,8 +347,13 @@ class BaseEnv(gym.Env):
             obs_dict = dict()                                        
             for agent in self._agents:
                 obs_dict[agent.id] = agent.state.image
-            # cv2.imshow("test", obs_dict["Agent_1"])
-            # cv2.waitKey(1)
+
+            # visualize latent space vector
+            reshaped_test = agent.state.image.reshape(8,8,1)
+            cv2.imshow("latent", reshaped_test)
+            cv2.waitKey(1)
+            cv2.imshow("reconstructed", agent.ss_rec)
+            cv2.waitKey(1)
 
             return obs_dict
 
@@ -423,7 +427,13 @@ class BaseEnv(gym.Env):
         #reward = reward + velocity * 0.1 + position_change * 0.5  - dist_to_middle_lane * 0.1 - collision_penalty - steering_change * 0.1 - invasions_incr * 10
         #print(rew_util.reward_1(agent.state.distance_to_center_line, agent.state.delta_heading, agent.state.current_speed))
         #print(dist_to_middle_lane**2)
-        reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2))
+        
+        #good results, up to 1000 rewards
+        #reward = 0.1 * (reward + velocity * 0.2 - collision_penalty - (dist_to_middle_lane**2))
+
+        reward = 0.1 * (reward + velocity * 0.25 - collision_penalty - (dist_to_middle_lane**2) - agent.state.delta_heading*0.3)
+
+
        # print("reward: " + str(reward) + " | " + str((velocity * 0.2)) + " | " + str((dist_to_middle_lane * 0.1)))
         return reward
 

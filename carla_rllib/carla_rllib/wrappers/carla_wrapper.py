@@ -781,9 +781,9 @@ class FrontAEWrapper(ContinuousWrapper):
 
         # --- predictions not needed for latent space extaction ----
         # 
-        # preds = self.ae.predict(ae_input, batch_size=1)
-        # reconstructed_ss = preds[0]
-        
+        preds = self.ae.predict(ae_input, batch_size=1)
+        reconstructed_ss = preds[0]
+        self.ss_rec = reconstructed_ss[0]
         # # visualize latent space vector
         # reshaped_test = front_ss_encoded.reshape(8,8,1)
         # cv2.imshow("latent", reshaped_test)

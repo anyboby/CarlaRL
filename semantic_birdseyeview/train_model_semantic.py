@@ -226,7 +226,7 @@ num_ae_layers = 3
 central_ae_exp = 5
 patience = 10
 num_sweeps = 24
-validation_episodes_for_movies = [100, 101]
+validation_episodes_for_movies = [12, 45, 101]
 
 bottleneck_dim = (
     BATCH_SIZE,
@@ -257,7 +257,7 @@ early_stopping = EarlyStopping(
     restore_best_weights=True,
 )
 
-storage = get_X_and_Y(['Town05'], [108, 109], DECIMATION, CAMERA_IDS)
+storage = get_X_and_Y(['Town05'],  [0, 1, 2, 3, 4, 5, 6, 7, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
 X_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' not in id_]
 Y_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' in id_][0]
 valid_gen = batcher(
@@ -267,17 +267,15 @@ valid_gen = batcher(
 )
 
 MULTI_MODEL_EPISODES = [
-    range(0, 8),
-    range(8, 16),
+range(8, 16),
     range(16, 24),
     range(24, 32),
     range(32, 40),
-    range(40,48),
+    range(40, 48),
     range(48, 56),
     range(56, 64),
     range(72, 80),
     range(88, 96),
-    range(96, 102),
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -353,13 +351,15 @@ for sweep in range(num_sweeps):
 
     for racetrack in ['Town05']:
         for episode in validation_episodes_for_movies:
-            make_movie(
-                model_filename,
-                racetrack,
-                episode,
-                DECIMATION,
-                CLASSES_NAMES,
-                CAMERA_IDS,
-                multi_model,
-                batch_size=BATCH_SIZE,
-            )
+            try:
+                make_movie(
+                    model_filename,
+                    racetrack,
+                    episode,
+                    DECIMATION,
+                    CLASSES_NAMES,
+                    CAMERA_IDS,
+                    multi_model,
+                    batch_size=BATCH_SIZE,
+                )
+            except: print("could not make movie")

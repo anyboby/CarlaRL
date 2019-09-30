@@ -19,7 +19,7 @@ from keras.models import load_model
 LABELS = {
     0: 'None',
     70: 'Buildings',
-    152: 'Fences',      # this one doesnt exist
+    152: 'Fences',      # this one doesnt exist, usually 153
     160: 'Other',
     60: 'Pedestrians',
     153: 'Poles',
@@ -29,7 +29,7 @@ LABELS = {
     35: 'Vegetation',
     142: 'Vehicles',
     156: 'Walls',
-    1: 'TrafficSigns',  # this one doesnt exist
+    1: 'TrafficSigns',  # this one doesnt exist, usually 0
 }
 
 REVERSE_LABELS = dict(zip(LABELS.values(), LABELS.keys()))
@@ -419,8 +419,7 @@ def make_movie(
 
         # Front
         gap_1 = int(1.8 * unit_length)
-        # frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = np.argmax(X_final[0][frame_idx], axis=2)
-        frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = X_final[0][frame_idx]
+        frame[one_fifth:(one_fifth+height), gap_1:(gap_1+width)] = np.argmax(X_final[0][frame_idx], axis=2)
 
         # Left
         gap_2 = int(one_fifth + height + one_fifth)

@@ -86,7 +86,7 @@ class BaseEnv(gym.Env):
         self.lane_invasion = 0
         self.dist_to_middle_lane = 0
         self.MAX_DIST_MIDDLE_LANE = 1.8
-        self.MAX_VELOCITY = 40 # TODO: Find out
+        self.MAX_VELOCITY = 12 # M / Sec
         self.MAX_SPEED_LIMIT = 10
 
         # Initialize client and get/load map        
@@ -284,6 +284,9 @@ class BaseEnv(gym.Env):
 
         # Set reset
         for agent in self._agents:
+            # Switch map every x steps
+            getMap5or7()
+
             reset = self._get_reset(agent)
             agent.reset(reset)
 
@@ -409,7 +412,7 @@ class BaseEnv(gym.Env):
         dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 20
+            collision_penalty = 50
         # Update memory values
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
@@ -417,7 +420,7 @@ class BaseEnv(gym.Env):
         self._current_position = position
         #print(dist_to_middle_lane**2)
         reward = -0.1
-        reward = 0.05 * (reward + velocity * 0.3 - collision_penalty - (dist_to_middle_lane**2) - 0.2 * abs(delta_heading))
+        reward = 0.1 * (reward + abs((self.MAX_VELOCITY-velocity)**2) * 0.05 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.2 * abs(delta_heading))
         #print("reward: " + str(reward))
         return reward
 
@@ -554,3 +557,20 @@ class BaseEnv(gym.Env):
             return spawn
         else:
             raise Exception("Map not supported yet")
+
+
+    def getMap5or7(self):
+        maps = ["Town05", "Town07"]
+        selected_map = random.choice(maps)
+        self._map = selected_map
+        try:
+            client = carla.Client(self._host, self._port)
+            self.world = client.get_world()
+            if (self._map and self.world.get_map().name != self._map):
+                client.set_timeout(100.0)
+                print('Load map: %r.' % self._map)
+                self.world = client.load_world(self._map)
+            client.set_timeout(2.0)
+            print("Changed town")
+        except:
+            raise ConnectionError("Cannot connect to Carla Server! Failed changing town")

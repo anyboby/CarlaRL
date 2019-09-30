@@ -1,30 +1,3 @@
-# Aktueller stand
-- 3 wichtige Dateien:
-1. carla_wrapper: Hier sensoren usw. anpassen
-2. carla_env_MIF: Hier stable baselines zeug anpassen
-3. carla_env: Hier preprocessing usw anpassen - schau dir die funktion _get_obs an
-- Die stable baselines datei liegt unter stable_baselines/carla_env_MIF.py
-- Dieses file einfach ausf?hren um zu trainieren
-- Tensorboard kann mit dem Befehl in launcH_tensorboard angesehen werden
-- Preprocessing findet in _get_obs in carla_env statt
-- Der Input ist bereits auf 80x80 resized und 
-
-# N?chste Schritte
-- Inputstate vereinfachen
-- Rewardfunktion nochmal ?berarbeiten (Gewichtungsverh?ltnis von Bestrafung und Belohnung anpassen)
-- Vergleichen ob PPO, SAC, DDPG --> Welcher ist am besten  
-
-
-
-
-
-
-
-
-
-
-
-
 # Prerequisites
 
 virtualenv -p python3 carla_env

@@ -222,6 +222,7 @@ def get_multi_model(
                 kernel_regularizer=l2(l2_reg),
                 name = "dense_{}_{}".format(inp_name, i)
             )(x)
+            ## <--
             ### Attention ! here is another bottleneck of the side camera images with heavier influence of the birds eye view! ###
         x = Dense(
                 encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
@@ -275,7 +276,7 @@ num_ae_layers = 3
 central_ae_exp = 5
 patience = 10
 num_sweeps = 24
-validation_episodes_for_movies = [12, 45, 101]
+validation_episodes_for_movies = [1, 45, 101]
 
 # ls after encoder conv layers
 ls_dim_after_conv = (
@@ -318,7 +319,7 @@ early_stopping = EarlyStopping(
 
 multi_model.summary()
 
-storage = get_X_and_Y(['Town05'], [0, 1, 2, 3, 4, 5, 6, 7, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
+storage = get_X_and_Y(['Town05'], [0, 1, 2, 3, 4, 5, 6, 7, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
 X_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' not in id_]
 Y_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' in id_][0]
 valid_gen = batcher_rgb(

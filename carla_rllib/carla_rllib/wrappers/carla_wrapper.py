@@ -804,11 +804,11 @@ class DataGeneratorWrapper(ContinuousWrapper):
     def _start(self, spawn_point, actor_model=None, actor_name=None):
         super(DataGeneratorWrapper, self)._start(spawn_point)
         # Set up sensors
-        self._autopilot = False
+        self._autopilot = True
         self._sensors = []
         self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=200, height=300,
-                                                orientation=[0, 40, -90, 0], id="TopSS"))
+                                                orientation=[0, 20, -90, 0], id="TopSS"))
         self._sensors.append(RgbSensor(self._vehicle,
                                                 width=300, height=200,
                                                 orientation=[1, 3, -10, 0], id="FrontRGB"))

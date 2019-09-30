@@ -80,6 +80,7 @@ class BaseEnv(gym.Env):
         # Declare remaining variables
         self.frame = None
         self.timeout = 100.0
+        self.reset_count = 0
 
         # Memory for reward functions
         self.velocity = 0
@@ -281,12 +282,12 @@ class BaseEnv(gym.Env):
             obs_dict: dict
                 the initial observations
         """
+        self.reset_count = self.reset_count + 1
 
         # Set reset
-        for agent in self._agents:
-            # Switch map every x steps
-            getMap5or7()
-
+        for agent in self._agents: 
+            # Change map every 10 resets
+            # self.getMap5or7()
             reset = self._get_reset(agent)
             agent.reset(reset)
 
@@ -418,9 +419,9 @@ class BaseEnv(gym.Env):
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
         self._current_position = position
-        #print(dist_to_middle_lane**2)
         reward = -0.1
-        reward = 0.1 * (reward + abs((self.MAX_VELOCITY-velocity)**2) * 0.05 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.2 * abs(delta_heading))
+        # The velocity should be added to the input, otherwise the approach with a max velocity wont work
+        reward = 0.01 * (reward - velocity * 0.2 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.4 * abs(delta_heading))
         #print("reward: " + str(reward))
         return reward
 
@@ -552,7 +553,7 @@ class BaseEnv(gym.Env):
             spawn = random.choice(spawns)
             return spawn
         elif (self._map == "Town07"):
-            spawns = [[(72.23163604736328, -7.422206878662109), 62.16304397583008], [(-15.64913558959961, -243.93333435058594), -169.06280517578125]]
+            spawns = [[(70.23163604736328, 4.422206878662109), 40.16304397583008], [(-15.64913558959961, -243.93333435058594), -169.06280517578125]]
             spawn = random.choice(spawns)
             return spawn
         else:
@@ -570,7 +571,25 @@ class BaseEnv(gym.Env):
                 client.set_timeout(100.0)
                 print('Load map: %r.' % self._map)
                 self.world = client.load_world(self._map)
+                print(">>>>>>>> Change town")
             client.set_timeout(2.0)
-            print("Changed town")
         except:
             raise ConnectionError("Cannot connect to Carla Server! Failed changing town")
+
+        self._settings = self.world.get_settings()
+        if self._sync_mode:
+            if not self._settings.synchronous_mode:
+                _ = self.world.apply_settings(carla.WorldSettings(
+                    no_rendering_mode=False,
+                    synchronous_mode=True,
+                    fixed_delta_seconds=self._delta_sec))
+            print("Synchronous Mode enabled")
+        else:
+            if self._settings.synchronous_mode:
+                _ = self.world.apply_settings(carla.WorldSettings(
+                    no_rendering_mode=False,
+                    synchronous_mode=False,
+                    fixed_delta_seconds=None))
+            print("Synchronous Mode disabled")
+
+

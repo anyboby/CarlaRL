@@ -3,7 +3,7 @@
         "type": "semantic_segmentation",
         "x": 0, 
         "y": 0,
-        "z": 40,
+        "z": 20,
         "pitch": -90,
         "roll": 0.0,
         "yaw": 0.0,

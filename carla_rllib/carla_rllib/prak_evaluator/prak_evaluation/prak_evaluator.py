@@ -305,7 +305,7 @@ class ScenarioRunner(object):
         """
         Load and run the scenario given by config
         """
-
+        print("MODE::::::", self.world.get_settings().synchronous_mode)
         if not self._load_and_wait_for_world(args, config.town, config.ego_vehicles):
             self._cleanup()
             return

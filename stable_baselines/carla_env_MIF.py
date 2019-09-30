@@ -12,7 +12,6 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.common.vec_env import VecFrameStack
 
 
-
 # CARLA settings
 # ------------------------------------------------------------------------
 argparser = argparse.ArgumentParser(
@@ -45,7 +44,6 @@ MODE = "PPO"
 # Main
 try:
     env = gym.make("CarlaBaseEnv-v0", config=configs[0])
-    obs = env.reset()
 
     t = 0
     print("-----Carla Environment is running-----")
@@ -93,13 +91,38 @@ try:
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            SMODE = "RUN"
-            MODEL_NAME = "carla_ppo_lr=0.0001_30_09"
+            SMODE = "LEARN"
+            MODEL_NAME = "carla_ppo_lr=0_0001_30_09"
+            MAPSWITCHING = False
             if SMODE == "LEARN":
                 model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
-                model.learn(total_timesteps=300000)
-                model.save(MODEL_NAME)
-
+                if MAPSWITCHING:
+                    mapchanges=0
+                    while mapchanges <= 20:
+                        # Change map
+                        with open('../carla_rllib/carla_rllib/config.json', 'r+') as f:
+                            data = json.load(f)
+                            # Toggle map
+                            if data["maps"] == ['Town05']:
+                                data["maps"] = ['Town07']
+                            else:
+                                data["maps"] = ['Town05']
+                            f.seek(0)
+                            f.truncate()
+                            json.dump(data, f, indent=4)
+                            mapchanges = mapchanges + 1
+                        # Train model on this map
+                        config_json = json.load(open(args.config))
+                        configs = parse_json(config_json)
+                        env = gym.make("CarlaBaseEnv-v0", config=configs[0])
+                        env = DummyVecEnv([lambda: env])
+                        env = VecFrameStack(env, n_stack=4)
+                        model.set_env(env)
+                        model.learn(total_timesteps=10000)
+                        model.save(MODEL_NAME)
+                else:
+                    model.learn(total_timesteps=400000)
+                    model.save(MODEL_NAME)
             if SMODE == "RUN":
                 model = PPO2.load(MODEL_NAME)
                 obs = env.reset()

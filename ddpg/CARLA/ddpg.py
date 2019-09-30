@@ -27,7 +27,7 @@ class DDPG:
         self.actor = Actor(state_size, self.action_size, 0.1 * self.learning_rate, 0.001)
         self.critic = Critic(state_size, self.action_size, self.learning_rate, 0.001)
         self.buffer = MemoryBuffer(100000)
-        self.steps = 10000
+        self.steps = 2000
         self.noise_decay = 0.999
 
     def policy_action(self, s):
@@ -117,8 +117,8 @@ class DDPG:
                 noise_sample = noise.sample() * self.noise_decay
                 a = np.clip(a+noise_sample, -1, 1)
                 # scaling the acc and brake
-                if step % 500 == 0:
-                    print("Action sample: {} with decay: {:.4f} and noise {}".format(a, self.noise_decay, noise_sample))
+                # if step % 500 == 0:
+                #     print("Action sample: {} with decay: {:.4f} and noise {}".format(a, self.noise_decay, noise_sample))
                 new_state, r, done, _ = env.step(a)
 
                 #new_state = self.preprocess_state(new_state)
@@ -164,7 +164,6 @@ class DDPG:
             summary_writer.flush()
             
             self.save_weights('')
-            print("Score: " + str(cumul_reward))
         return results
     
     def tfSummary(self, tag, val):

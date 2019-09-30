@@ -158,7 +158,7 @@ class BaseWrapper(object):
         # Set up sensors
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=800, height=800,
-                                                orientation=[0, 40, -90, 0]))
+                                                orientation=[0, 20, -90, 0]))
 
 
         self._sensors.append(CollisionSensor(self._vehicle))

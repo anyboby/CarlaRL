@@ -433,7 +433,7 @@ class BaseEnv(gym.Env):
         self._current_position = position
         reward = -0.1
         # The velocity should be added to the input, otherwise the approach with a max velocity wont work
-        reward = 0.01 * (reward + velocity * 0.3 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.4 * abs(delta_heading))
+        reward = 0.01 * (reward + velocity * 0.4 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.4 * abs(delta_heading))
         #print("reward: " + str(reward))
         return reward
 

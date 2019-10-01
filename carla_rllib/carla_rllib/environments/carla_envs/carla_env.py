@@ -83,6 +83,7 @@ class BaseEnv(gym.Env):
         self.timeout = 100.0
         self.reset_count = 0
         self.save_images = False
+        self.save_rgb_images = False
         self.image_id_counter = 0
 
         # Memory for reward functions
@@ -149,7 +150,7 @@ class BaseEnv(gym.Env):
             for n in range(self._num_agents):
                 self._agents.append(ContinuousWrapper(self.world,
                                                       self.spawn_points[random.randint(0,len(self.spawn_points))],
-                                                      self._render_enabled))
+                                                      self._render_enabled, saveRGB=self.save_rgb_images))
                 
         elif self._agent_type == "discrete":
             for n in range(self._num_agents):

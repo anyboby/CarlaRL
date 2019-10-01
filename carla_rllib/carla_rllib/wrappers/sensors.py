@@ -19,6 +19,7 @@ import pygame
 import weakref
 import itertools
 from carla import ColorConverter as cc
+from PIL import Image
 
 
 #tentatively
@@ -85,13 +86,15 @@ class RgbSensor(object):
 
 class SegmentationSensor(object):
     def __init__(self, parent_actor, width=84, height=84,
-                 orientation=[-5.5, 2.8, -15, 0], palette='citypalette', id="default"):
+                 orientation=[-5.5, 2.8, -15, 0], saveRGB=False, palette='citypalette', id="default"):
         self.sensor = None
         self._parent = parent_actor
         self._width = width
         self._height = height
         self._queue = queue.Queue()
         self._id = id
+        self.save_rgb = saveRGB
+        self.image_id_counter = 0
 
         if palette == 'citypalette':
             self.spec = cc.CityScapesPalette
@@ -127,13 +130,22 @@ class SegmentationSensor(object):
 """
 this ss sensor has a custom preprocessing 
 """
-class SegmentationSensorCustom(SegmentationSensor):
+class SegmentationSensorCustom(SegmentationSensor):        
+    def saveObsImage(self, obs):
+        print(obs.shape)
+        img = cv2.resize(obs, (200,200))
+        img = Image.fromarray(img)
+        img.save('images/rgb/ppo_' + str(self.image_id_counter) + '.png')
+        self.image_id_counter+=1
+
     # @TODO Moritz, hier segmenetation daten anpassen
     def _preprocess_data(self, image):
         
         image.convert(self.spec)
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (image.height, image.width, 4))
+        if self.save_rgb:
+            self.saveObsImage(array)
         #array = array[:, :, ::-1]
         array = array[...,0]
         array = np.expand_dims(array, 3)

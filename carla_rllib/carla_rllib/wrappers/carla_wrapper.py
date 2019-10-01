@@ -32,6 +32,7 @@ from keras.models import Model
 from keras import backend as K
 import cv2
 
+
 VEHICLE_MODELS = ['vehicle.audi.a2',
                   'vehicle.audi.tt',
                   'vehicle.carlamotors.carlacola',
@@ -112,7 +113,7 @@ class BaseWrapper(object):
 
     ID = 1
 
-    def __init__(self, world, spawn_point, render=False):
+    def __init__(self, world, spawn_point, render=False, saveRGB=False):
 
         self.id = "Agent_" + str(BaseWrapper.ID)
         self._world = world
@@ -124,7 +125,7 @@ class BaseWrapper(object):
         self._render_enabled = render
         self.state = BaseState()
         self._simulate_physics = True
-
+        self.saveRGB=saveRGB
 
         self._start(spawn_point, VEHICLE_MODELS[1], self.id)
         if self._render_enabled:
@@ -158,7 +159,7 @@ class BaseWrapper(object):
         # Set up sensors
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=800, height=800,
-                                                orientation=[0, 20, -90, 0]))
+                                                orientation=[0, 20, -90, 0], saveRGB=self.saveRGB))
 
 
         self._sensors.append(CollisionSensor(self._vehicle))
@@ -353,7 +354,7 @@ class ContinuousWrapper(BaseWrapper):
         # Set up sensors
         self._sensors.append(SegmentationSensorCustom(self._vehicle,
                                                 width=1000, height=1000,
-                                                orientation=[0, 20, -90, 0]))
+                                                orientation=[0, 20, -90, 0], saveRGB=self.saveRGB))
 
 
         self._sensors.append(CollisionSensor(self._vehicle))

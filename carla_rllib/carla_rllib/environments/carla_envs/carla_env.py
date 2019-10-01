@@ -32,6 +32,7 @@ from carla_rllib.wrappers.carla_wrapper import DataGeneratorWrapper
 from carla_rllib.wrappers.carla_wrapper import BirdsEyeWrapper
 from carla_rllib.wrappers.carla_wrapper import FrontAEWrapper
 import carla_rllib.utils.reward_functions as rew_util
+from PIL import Image
 
 from matplotlib import pyplot as plt
 import cv2
@@ -45,7 +46,7 @@ class BaseEnv(gym.Env):
     def __init__(self, config):
 
         # some flags for wrapper selection, only use one
-        self._data_gen = True
+        self._data_gen = False
         self._use_front_ae = False
         self._use_birdseye = False
         data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (1,12,18,64) 
@@ -81,6 +82,8 @@ class BaseEnv(gym.Env):
         self.frame = None
         self.timeout = 100.0
         self.reset_count = 0
+        self.save_images = False
+        self.image_id_counter = 0
 
         # Memory for reward functions
         self.velocity = 0
@@ -368,6 +371,8 @@ class BaseEnv(gym.Env):
             obs_dict = dict()
             for agent in self._agents:
                 obs_dict[agent.id] = agent.state.image
+                if self.save_images:
+                    self.saveObsImage(agent.state.image)
                 #print ("image shape: " + str(agent.state.image.shape))
                 obs_dict[agent.id] = cv2.resize(obs_dict[agent.id], (self._obs_shape[0],self._obs_shape[1]))
                 #print("after resize: " + str(obs_dict[agent.id].shape))
@@ -375,6 +380,7 @@ class BaseEnv(gym.Env):
             #obs_dict["Agent_1"] = cv2.cvtColor(obs_dict["Agent_1"], cv2.COLOR_RGB2GRAY)
             # cv2.imshow("image", obs_dict["Agent_1"])
             # cv2.waitKey(1)
+
 
             # PLOTTING - Be careful, this is slow!
             plot = False
@@ -426,7 +432,7 @@ class BaseEnv(gym.Env):
         self._current_position = position
         reward = -0.1
         # The velocity should be added to the input, otherwise the approach with a max velocity wont work
-        reward = 0.01 * (reward - velocity * 0.2 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.4 * abs(delta_heading))
+        reward = 0.01 * (reward + velocity * 0.3 - collision_penalty - 0.1 * (dist_to_middle_lane**2) - 0.4 * abs(delta_heading))
         #print("reward: " + str(reward))
         return reward
 
@@ -564,6 +570,14 @@ class BaseEnv(gym.Env):
         else:
             raise Exception("Map not supported yet")
 
+    def saveObsImage(self, obs):
+        img = cv2.resize(obs, (200,200))
+        img = Image.fromarray(img)
+        if self.frame:
+            # Store every 20 images
+            if (self.start_frame + self.frame) % 100:
+                img.save('images/ppo_' + str(self.image_id_counter) + '.png')
+                self.image_id_counter+=1
 
     def getMap5or7(self):
         maps = ["Town05", "Town07"]

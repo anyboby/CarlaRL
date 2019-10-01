@@ -298,7 +298,8 @@ class BaseWrapper(object):
         # Note: distance to center line depends on the town!
 
         if (self.state.collision or
-            self.state.elapsed_ticks >= 2000):   
+            self.state.elapsed_ticks >= 2000 or
+            self.state.distance_to_center_line > 1.4):   
             return True
         else:
             return False
@@ -599,7 +600,7 @@ class BirdsEyeWrapper(ContinuousWrapper):
 class FrontAEWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(FrontAEWrapper, self).__init__(world, spawn_point, render=render)
-        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
+        model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models_not_ignored/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
         self.ae = load_model(model_filename)
         # --- extract intermediate layer that contains latent space ---- #
         encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")

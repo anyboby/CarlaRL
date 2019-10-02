@@ -248,7 +248,7 @@ def get_multi_model(
             2**(central_reconstruction_exp+1),
             activation=act,
             kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
+            name = "dense_{}_{}".format("birdseye_latent", i)
         )(be_encoded)
 
     #### birdseye bottleneck is here

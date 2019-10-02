@@ -224,60 +224,48 @@ def get_multi_model(
             )(x)
             ## <--
             ### Attention ! here is another bottleneck of the side camera images with heavier influence of the birds eye view! ###
+        x = Dense(
+                encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
+                activation=act,
+                kernel_regularizer=l2(l2_reg),
+                name = "dense_{}_upscale".format(inp_name)
+            )(x)
 
-        # x = Dense(
-        #         encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
-        #         activation=act,
-        #         kernel_regularizer=l2(l2_reg),
-        #         name = "dense_{}_upscale".format(inp_name)
-        #     )(x)
-
-        # x = Reshape(encoded_shape)(x)
-        # x = Convolution2D(
-        #     encoded_shape[-1], 
-        #     (3, 3),
-        #     activation=act,
-        #     padding='same',
-        #     name='encoded_from_'+inp_name,
-        # )(x)
+        x = Reshape(encoded_shape)(x)
+        x = Convolution2D(
+            encoded_shape[-1], 
+            (3, 3),
+            activation=act,
+            padding='same',
+            name='encoded_from_'+inp_name,
+        )(x)
         for_final_reconstruction.append(x)
         
-    be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
-
-    #### birdseye bottleneck is here
-
-    be_encoded = Dense(
-        encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
-        activation=act,
-        kernel_regularizer=l2(l2_reg),
-        name = "dense_{}_upscale".format("birdseye")
-    )(be_encoded)
-
-    be_encoded = Reshape(encoded_shape)(be_encoded)
-
-    be_encoded = Convolution2D(
+    x = Concatenate()(for_final_reconstruction)
+    encoded_reconstruction = Convolution2D(
         encoded_shape[-1],
         (3, 3),
         activation=act,
-        padding="same",
-        name="conv_birdseye_before_reconstruction",
-    )(be_encoded)
+        padding='same',
+        name='before_reconstruction_1',
+    )(x)
 
-    encoded_diff = Subtract(name="encoded_from_TopSS-encoded_reconstruction")([all_bottlenecks["TopSS"], be_encoded])
-    
-    be_reconstruction = decoder_model(be_encoded)
-    be_reconstruction = Softmax(axis=3, name="birdseye_reconstruction")(be_reconstruction)
+    if AE_FEATURES is not None:
+        encoded_reconstruction = Flatten()(encoded_reconstruction)
+        encoded_reconstruction = Dense (
+            AE_FEATURES, 
+            activation=act, 
+            name = "before_reconstruction_2"
+        )(encoded_reconstruction)
+
+    encoded_diff = Subtract(name='encoded_from_TopSS-encoded_reconstruction')([all_bottlenecks['TopSS'], encoded_reconstruction])
+
+    reconstruction = decoder_model(encoded_reconstruction)
+    reconstruction = Softmax(axis=3, name='reconstruction')(reconstruction)
     
     outputs = (
         [ae_outputs[inp_name] for inp_name in input_names]
-        + [be_reconstruction]
+        + [reconstruction]
         + [encoded_diff]
     )
     inputs = [inputs[inp_name] for inp_name in input_names]
@@ -288,7 +276,7 @@ num_ae_layers = 3
 central_ae_exp = 5
 patience = 10
 num_sweeps = 24
-validation_episodes_for_movies = [4, 76, 104]
+validation_episodes_for_movies = [1, 45, 101]
 
 # ls after encoder conv layers
 ls_dim_after_conv = (
@@ -331,7 +319,7 @@ early_stopping = EarlyStopping(
 
 multi_model.summary()
 
-storage = get_X_and_Y(['Town05'], [1,2,3,4,5,6,7,73,74,75,76,77,78,79,103,104,105,106,107,108,109], DECIMATION, CAMERA_IDS)
+storage = get_X_and_Y(['Town05'], [0, 1, 2, 3, 4, 5, 6, 7, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
 X_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' not in id_]
 Y_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' in id_][0]
 valid_gen = batcher_rgb(
@@ -341,19 +329,15 @@ valid_gen = batcher_rgb(
 )
 
 MULTI_MODEL_EPISODES = [
-    #range(0, 8),
     range(8, 16),
-    # range(16, 24),
-    # range(24, 32),
-    # range(32, 40),
-    # range(40,48),
-    # range(48, 56),
-    # range(56, 64),
-    # range(64, 72),
-    # #range(72, 80),
-    # range(88, 96),
-    # range(96, 102),
-    # #range(102, 109)
+    range(16, 24),
+    range(24, 32),
+    range(32, 40),
+    range(40,48),
+    range(48, 56),
+    range(56, 64),
+    range(72, 80),
+    range(88, 96),
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -399,7 +383,7 @@ for sweep in range(num_sweeps):
         history = multi_model.fit_generator(
             train_gen,
             steps_per_epoch=X[0].shape[-1] // BATCH_SIZE // 10,
-            epochs=12,
+            epochs=50,
             validation_data=valid_gen,
             validation_steps=X_val[0].shape[-1] // BATCH_SIZE // 2,
             verbose=1,

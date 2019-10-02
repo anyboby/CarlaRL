@@ -1,7 +1,7 @@
 {
     "agent_type": "continuous",
     "maps": [
-        "Town07"
+        "Town05"
     ],
     "stable_baselines": true,
     "sync_mode": true,
@@ -9,7 +9,7 @@
         "localhost"
     ],
     "ports": [
-        2000
+        3283
     ],
     "delta_sec": 0.05,
     "render": true,

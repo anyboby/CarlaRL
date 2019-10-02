@@ -469,7 +469,7 @@ class BirdsEyeWrapper(ContinuousWrapper):
                                                 orientation=[-1, 3, -10, 180], id="RearSS"))
         # self._sensors.append(SegmentationSensorTags(self._vehicle,
         #                                         width=IMAGE_SHAPE[0], height=IMAGE_SHAPE[1],
-        #                                         orientation=[0, 20, -90, 0], id="TopSS"))                                                
+        #                                         orientation=[0, 40, -90, 0], id="TopSS"))                                                
 
         self._sensors.append(CollisionSensor(self._vehicle))
         self._sensors.append(LaneInvasionSensor(self._vehicle))

@@ -42,7 +42,7 @@ if __name__ == "__main__":
         print("-----Carla Environment is running-----")
         y = 0
         episode = 0
-        episodes_successful = 81
+        episodes_successful = 52
         frame = 0
         frames_per_episode = 1000
         storage = {}

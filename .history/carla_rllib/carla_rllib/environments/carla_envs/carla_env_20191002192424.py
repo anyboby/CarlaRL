@@ -131,8 +131,8 @@ class BaseEnv(gym.Env):
             # prefer out of town spawn spots
             for n in range(self._num_agents):
                 self._agents.append(DataGeneratorWrapper(self.world,
-                                                          self.spawn_points[random.randint(0,len(self.spawn_points))],
-                                                          self._render_enabled))
+                                                         self.spawnPointGenerator(self.spawn_points),
+                                                         self._render_enabled))
         elif self._use_birdseye:
             for n in range(self._num_agents):
                 self._agents.append(BirdsEyeWrapper(self.world,
@@ -465,9 +465,9 @@ class BaseEnv(gym.Env):
             reset = dict()
             for any_agent in self._agents:
                 #@git from Moritz
-                # if self._data_gen:
-                #     position = (self.spawnPointGeneratorTown5().location.x,
-                #                 self.spawnPointGeneratorTown5().location.y)
+                if self._data_gen:
+                    position = (self.spawnPointGeneratorTown5().location.x,
+                                self.spawnPointGeneratorTown5().location.y)
                 # @git from Flo
                 spawnpoint = self.spawnPointGeneratorScenarioRunner()
                 position = spawnpoint[0]

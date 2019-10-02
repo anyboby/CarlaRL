@@ -465,9 +465,9 @@ class BaseEnv(gym.Env):
             reset = dict()
             for any_agent in self._agents:
                 #@git from Moritz
-                # if self._data_gen:
-                #     position = (self.spawnPointGeneratorTown5().location.x,
-                #                 self.spawnPointGeneratorTown5().location.y)
+                if self._data_gen:
+                    position = (self.spawnPointGeneratorTown5().location.x,
+                                self.spawnPointGeneratorTown5().location.y)
                 # @git from Flo
                 spawnpoint = self.spawnPointGeneratorScenarioRunner()
                 position = spawnpoint[0]

@@ -243,13 +243,12 @@ def get_multi_model(
         for_final_reconstruction.append(x)
         
     be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
+    be_encoded = Dense(
+        2**(central_reconstruction_exp+1),
+        activation=act,
+        kernel_regularizer=l2(l2_reg),
+        name = "dense_{}".format("birdseye_latent")
+    )(be_encoded)
 
     #### birdseye bottleneck is here
 

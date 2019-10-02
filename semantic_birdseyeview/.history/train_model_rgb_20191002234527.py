@@ -243,13 +243,12 @@ def get_multi_model(
         for_final_reconstruction.append(x)
         
     be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
+    be_encoded = Dense(
+        2**(central_reconstruction_exp+1),
+        activation=act,
+        kernel_regularizer=l2(l2_reg),
+        name = "dense_{}".format("birdseye_latent")
+    )(be_encoded)
 
     #### birdseye bottleneck is here
 
@@ -399,7 +398,7 @@ for sweep in range(num_sweeps):
         history = multi_model.fit_generator(
             train_gen,
             steps_per_epoch=X[0].shape[-1] // BATCH_SIZE // 10,
-            epochs=12,
+            epochs=50,
             validation_data=valid_gen,
             validation_steps=X_val[0].shape[-1] // BATCH_SIZE // 2,
             verbose=1,

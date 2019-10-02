@@ -1,20 +1,20 @@
-{   
+{
     "agent_type": "continuous",
-    "frame_skip": 0,
-    "delta_sec": 0.05,
-    "sync_mode": true,
+    "maps": [
+        "Town05"
+    ],
     "stable_baselines": true,
-    "render": true,
+    "sync_mode": true,
     "hosts": [
         "localhost"
     ],
     "ports": [
-        2000
+        3283
     ],
-    "maps": [
-        "Town05"
-    ],
+    "delta_sec": 0.05,
+    "render": true,
     "num_agents": [
         1
-    ]
+    ],
+    "frame_skip": 0
 }

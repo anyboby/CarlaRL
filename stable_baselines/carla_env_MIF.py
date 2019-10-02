@@ -91,11 +91,11 @@ try:
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            SMODE = "LEARN"
-            MODEL_NAME = "carla_ppo_lr=0_0001_30_09"
+            SMODE = "RETRAIN"
+            MODEL_NAME = "carla_ppo_lr=0_0004_easyRew_gt"
             MAPSWITCHING = False
             if SMODE == "LEARN":
-                model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0001, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=4, gamma=0.95)
+                model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0004, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=8, gamma=0.97)
                 if MAPSWITCHING:
                     mapchanges=0
                     while mapchanges <= 20:
@@ -121,8 +121,9 @@ try:
                         model.learn(total_timesteps=10000)
                         model.save(MODEL_NAME)
                 else:
-                    model.learn(total_timesteps=400000)
+                    model.learn(total_timesteps=200000)
                     model.save(MODEL_NAME)
+                    break
             if SMODE == "RUN":
                 model = PPO2.load(MODEL_NAME)
                 obs = env.reset()
@@ -134,9 +135,9 @@ try:
             if SMODE == "RETRAIN":
                 model = PPO2.load(MODEL_NAME)   
                 model.set_env(env)
-                model.learn(total_timesteps=400000)
+                model.learn(total_timesteps=100000)
                 model.save(MODEL_NAME)
-
+                break
                
         if MODE == "SAC":
             from stable_baselines.sac.policies import CnnPolicy

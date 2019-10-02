@@ -299,8 +299,7 @@ class BaseWrapper(object):
         # Note: distance to center line depends on the town!
 
         if (self.state.collision or
-            self.state.elapsed_ticks >= 2000 or
-            self.state.distance_to_center_line > 1.4):   
+            self.state.elapsed_ticks >= 2000):   
             return True
         else:
             return False

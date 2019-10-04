@@ -91,11 +91,11 @@ try:
             # Allow less clipping
             # Increased learning rate
             # Faster updates
-            SMODE = "RETRAIN"
-            MODEL_NAME = "carla_ppo_lr=0_0004_easyRew_gt"
+            SMODE = "LEARN"
+            MODEL_NAME = "carla_ppo_be_lr=0_0004_easyRew_gt"
             MAPSWITCHING = False
             if SMODE == "LEARN":
-                model = PPO2(CnnPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0004, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=8, gamma=0.97)
+                model = PPO2(MlpPolicy, env, verbose=0, tensorboard_log="./tensorboard_logs/", learning_rate=0.0004, nminibatches=32,  n_steps=1024, cliprange=0.1, noptepochs=8, gamma=0.97)
                 if MAPSWITCHING:
                     mapchanges=0
                     while mapchanges <= 20:

@@ -18,12 +18,14 @@
 *.sublime-project
 *.sublime-workspace
 
+*.history*
+
 *camera_storage/
 *camera_storage*
 *histories/
 *movies/
 *semantic_birdseye_env/
-*models/
+*semantic_birdseyeview/models/
 tensorboard_logs/
 logs/
 

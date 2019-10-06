@@ -242,42 +242,41 @@ def get_multi_model(
         # )(x)
         for_final_reconstruction.append(x)
         
-    be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
+    encoded_reconstruction = Concatenate()(for_final_reconstruction)
+    encoded_reconstruction = Dense(
+        2**(central_reconstruction_exp+1),
+        activation=act,
+        kernel_regularizer=l2(l2_reg),
+        name = "dense_{}".format("birdseye_latent")
+    )(encoded_reconstruction)
 
-    #### birdseye bottleneck is here
-
-    be_encoded = Dense(
+    encoded_reconstruction = Dense(
         encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
         activation=act,
         kernel_regularizer=l2(l2_reg),
         name = "dense_{}_upscale".format("birdseye")
-    )(be_encoded)
+    )(encoded_reconstruction)
 
-    be_encoded = Reshape(encoded_shape)(be_encoded)
+    encoded_reconstruction = Reshape(encoded_shape)(encoded_reconstruction)
 
-    be_encoded = Convolution2D(
+    encoded_reconstruction = Convolution2D(
         encoded_shape[-1],
         (3, 3),
         activation=act,
-        padding="same",
-        name="conv_birdseye_before_reconstruction",
-    )(be_encoded)
+        padding='same',
+        name='conv_birdseye_before_reconstruction',
+    )(encoded_reconstruction)
 
-    encoded_diff = Subtract(name="encoded_from_TopSS-encoded_reconstruction")([all_bottlenecks["TopSS"], be_encoded])
+    encoded_diff = Subtract(name='encoded_from_TopSS-encoded_reconstruction')([all_bottlenecks['TopSS'], encoded_reconstruction])
+
+    encoded_reconstruction = Flatten()(encoded_reconstruction)
     
-    be_reconstruction = decoder_model(be_encoded)
-    be_reconstruction = Softmax(axis=3, name="birdseye_reconstruction")(be_reconstruction)
+    reconstruction = decoder_model(encoded_reconstruction)
+    reconstruction = Softmax(axis=3, name='reconstruction')(reconstruction)
     
     outputs = (
         [ae_outputs[inp_name] for inp_name in input_names]
-        + [be_reconstruction]
+        + [reconstruction]
         + [encoded_diff]
     )
     inputs = [inputs[inp_name] for inp_name in input_names]
@@ -324,7 +323,7 @@ multi_model.compile(
 )
 
 early_stopping = EarlyStopping(
-    monitor='val_birdseye_reconstruction_loss',
+    monitor='val_reconstruction_loss',
     patience=patience,
     restore_best_weights=True,
 )
@@ -408,7 +407,7 @@ for sweep in range(num_sweeps):
         
         histories.append(history.history)
         
-    val_loss = history.history['val_birdseye_reconstruction_loss'][-(patience+1)]
+    val_loss = history.history['val_reconstruction_loss'][-(patience+1)]
     model_filename = 'models/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.h5'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)
     multi_model.save(model_filename)
     histories_filename = 'histories/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.pkl'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)

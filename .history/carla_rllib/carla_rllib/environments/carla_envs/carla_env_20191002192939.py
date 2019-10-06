@@ -48,8 +48,8 @@ class BaseEnv(gym.Env):
         # some flags for wrapper selection, only use one
         self._data_gen = False
         self._use_front_ae = False
-        self._use_birdseye = True
-        data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (128,) 
+        self._use_birdseye = False
+        data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (1,12,18,64) 
 
         print("-----Starting Environment-----")
         # Read config
@@ -131,21 +131,18 @@ class BaseEnv(gym.Env):
             # prefer out of town spawn spots
             for n in range(self._num_agents):
                 self._agents.append(DataGeneratorWrapper(self.world,
-                                                        #   self.spawn_points[random.randint(0,len(self.spawn_points))],
-                                                          self.spawn_points[0],
-                                                          self._render_enabled))
+                                                         self.spawnPointGenerator(self.spawn_points),
+                                                         self._render_enabled))
         elif self._use_birdseye:
             for n in range(self._num_agents):
                 self._agents.append(BirdsEyeWrapper(self.world,
-                                                    #   self.spawn_points[random.randint(0,len(self.spawn_points))],
-                                                      self.spawn_points[0],
+                                                      self.spawn_points[random.randint(0,len(self.spawn_points))],
                                                       self._render_enabled))
 
         elif self._use_front_ae:
             for n in range(self._num_agents):
                 self._agents.append(FrontAEWrapper(self.world,
-                                                    #   self.spawn_points[random.randint(0,len(self.spawn_points))],
-                                                      self.spawn_points[0],
+                                                      self.spawn_points[random.randint(0,len(self.spawn_points))],
                                                       self._render_enabled))                                                
         
         elif self._agent_type == "continuous":
@@ -346,24 +343,13 @@ class BaseEnv(gym.Env):
                 obs_dict[agent.id] = agent.state.image
 
             # PLOTTING - Be careful, this is slow!
-            plot = True
-
-            reshaped_test = agent.state.image.reshape(8,16,1)
-            if plot:
-                cv2.imshow("latent", reshaped_test)
-                cv2.waitKey(1)
-                cv2.imshow("reconstructed_ss", agent.ss_rec)
-                cv2.waitKey(1)
-                cv2.imshow("reconstructed_be", agent.be_rec)
-                cv2.waitKey(1)
-
-
-            # if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
-            #     plt.ion()
-            #     plt.show()
-            #     plt.imshow(obs_dict["Agent_1"], cmap="gray")
-            #     plt.draw()
-            #     plt.pause(0.01)
+            plot = False
+            if (self.frame and plot and ((self.frame - self.start_frame) % 100) == 0):
+                plt.ion()
+                plt.show()
+                plt.imshow(obs_dict["Agent_1"], cmap="gray")
+                plt.draw()
+                plt.pause(0.01)
 
             return obs_dict
 
@@ -479,9 +465,9 @@ class BaseEnv(gym.Env):
             reset = dict()
             for any_agent in self._agents:
                 #@git from Moritz
-                # if self._data_gen:
-                #     position = (self.spawnPointGeneratorTown5().location.x,
-                #                 self.spawnPointGeneratorTown5().location.y)
+                if self._data_gen:
+                    position = (self.spawnPointGeneratorTown5().location.x,
+                                self.spawnPointGeneratorTown5().location.y)
                 # @git from Flo
                 spawnpoint = self.spawnPointGeneratorScenarioRunner()
                 position = spawnpoint[0]

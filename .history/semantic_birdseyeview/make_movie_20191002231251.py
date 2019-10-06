@@ -46,6 +46,6 @@ episodes = [13, 34, 45, 87, 90, 109]
 # for semantic segmentation
 # for episode in episodes:
 #     make_movie(model_filename, racetrack, episode, DECIMATION, CLASSES_NAMES, CAMERA_IDS, episode_len=1000, batch_size=BATCH_SIZE)
-#for rgb
+for rgb
 for episode in episodes:
     make_movie(model_filename, racetrack, episode, DECIMATION, CLASSES_NAMES, CAMERA_IDS_RGB, episode_len=1000, batch_size=BATCH_SIZE, cmap=None)

@@ -243,13 +243,12 @@ def get_multi_model(
         for_final_reconstruction.append(x)
         
     be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
+    be_encoded = Dense(
+        2**(central_reconstruction_exp+1),
+        activation=act,
+        kernel_regularizer=l2(l2_reg),
+        name = "dense_{}".format("birdseye_latent")
+    )(be_encoded)
 
     #### birdseye bottleneck is here
 
@@ -324,7 +323,7 @@ multi_model.compile(
 )
 
 early_stopping = EarlyStopping(
-    monitor='val_birdseye_reconstruction_loss',
+    monitor='val_reconstruction_loss',
     patience=patience,
     restore_best_weights=True,
 )
@@ -408,7 +407,7 @@ for sweep in range(num_sweeps):
         
         histories.append(history.history)
         
-    val_loss = history.history['val_birdseye_reconstruction_loss'][-(patience+1)]
+    val_loss = history.history['val_reconstruction_loss'][-(patience+1)]
     model_filename = 'models/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.h5'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)
     multi_model.save(model_filename)
     histories_filename = 'histories/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.pkl'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)

@@ -343,17 +343,17 @@ valid_gen = batcher_rgb(
 MULTI_MODEL_EPISODES = [
     #range(0, 8),
     range(8, 16),
-    range(16, 24),
-    range(24, 32),
-    range(32, 40),
-    range(40,48),
-    range(48, 56),
-    range(56, 64),
-    range(64, 72),
-    #range(72, 80),
-    range(88, 96),
-    range(96, 102),
-    #range(102, 109)
+    # range(16, 24),
+    # range(24, 32),
+    # range(32, 40),
+    # range(40,48),
+    # range(48, 56),
+    # range(56, 64),
+    # range(64, 72),
+    # #range(72, 80),
+    # range(88, 96),
+    # range(96, 102),
+    # #range(102, 109)
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -399,7 +399,7 @@ for sweep in range(num_sweeps):
         history = multi_model.fit_generator(
             train_gen,
             steps_per_epoch=X[0].shape[-1] // BATCH_SIZE // 10,
-            epochs=50,
+            epochs=1,
             validation_data=valid_gen,
             validation_steps=X_val[0].shape[-1] // BATCH_SIZE // 2,
             verbose=1,

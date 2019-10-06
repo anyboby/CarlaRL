@@ -248,7 +248,7 @@ def get_multi_model(
             2**(central_reconstruction_exp+1),
             activation=act,
             kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
+            name = "dense_{}_{}".format("birdseye_latent", i)
         )(be_encoded)
 
     #### birdseye bottleneck is here
@@ -324,7 +324,7 @@ multi_model.compile(
 )
 
 early_stopping = EarlyStopping(
-    monitor='val_birdseye_reconstruction_loss',
+    monitor='val_reconstruction_loss',
     patience=patience,
     restore_best_weights=True,
 )
@@ -343,17 +343,17 @@ valid_gen = batcher_rgb(
 MULTI_MODEL_EPISODES = [
     #range(0, 8),
     range(8, 16),
-    range(16, 24),
-    range(24, 32),
-    range(32, 40),
-    range(40,48),
-    range(48, 56),
-    range(56, 64),
-    range(64, 72),
-    #range(72, 80),
-    range(88, 96),
-    range(96, 102),
-    #range(102, 109)
+    # range(16, 24),
+    # range(24, 32),
+    # range(32, 40),
+    # range(40,48),
+    # range(48, 56),
+    # range(56, 64),
+    # range(64, 72),
+    # #range(72, 80),
+    # range(88, 96),
+    # range(96, 102),
+    # #range(102, 109)
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -399,7 +399,7 @@ for sweep in range(num_sweeps):
         history = multi_model.fit_generator(
             train_gen,
             steps_per_epoch=X[0].shape[-1] // BATCH_SIZE // 10,
-            epochs=50,
+            epochs=12,
             validation_data=valid_gen,
             validation_steps=X_val[0].shape[-1] // BATCH_SIZE // 2,
             verbose=1,
@@ -408,7 +408,7 @@ for sweep in range(num_sweeps):
         
         histories.append(history.history)
         
-    val_loss = history.history['val_birdseye_reconstruction_loss'][-(patience+1)]
+    val_loss = history.history['val_reconstruction_loss'][-(patience+1)]
     model_filename = 'models/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.h5'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)
     multi_model.save(model_filename)
     histories_filename = 'histories/multi_model_rgb_sweep={}_decimation={}_numclasses={}_valloss={:.3f}.pkl'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)

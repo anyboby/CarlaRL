@@ -427,27 +427,11 @@ class ContinuousWrapper(BaseWrapper):
 class BirdsEyeWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(BirdsEyeWrapper, self).__init__(world, spawn_point, render=render)
-        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model_rgb_sweep=4_decimation=2_numclasses=3_valloss=0.061.h5"
-        
-        #define loss to load model (doesn't really matter for inference though) 
-        weights_loss = np.array([0.18,0.18,0.64])
-        weighted_ce_loss =  weighted_categorical_crossentropy(weights_loss)
-        self.ae = load_model(model_filename, custom_objects={"loss":weighted_ce_loss})
-        # --- extract intermediate layer that contains latent space ---- #
-        be_latent_layer = self.ae.get_layer(name="dense_birdseye_latent_2")
-        be_inputs = self.ae.get_input_at(0)[:-1]
-        be_latent_output = be_latent_layer.output
-        self.functor = K.function(be_inputs, [be_latent_output])
-
-        # self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
-        #                       outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
-
-        # self.ae = load_model(model_filename)
-        # encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")
-        # encoded_in = self.ae.get_input_at(0)[0]
-        # encoded_out = encoder_layer.output
-        # self.functor = K.function([encoded_in], [encoded_out])
-
+        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
+        #model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model__sweep=10_decimation=2_numclasses=3_valloss=0.262.h5"
+        self.ae = load_model(model_filename)
+        self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
+                              outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
 
     def _start(self, spawn_point, actor_model=None, actor_name=None):
         """Spawn actor and initialize sensors"""
@@ -471,18 +455,18 @@ class BirdsEyeWrapper(ContinuousWrapper):
         IMAGE_SHAPE = (200,300)
 
         # Set up sensors
-        self._sensors.append(RgbSensor(self._vehicle,
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
-                                                orientation=[1, 3, -10, 0], id="FrontRGB"))
-        self._sensors.append(RgbSensor(self._vehicle,
+                                                orientation=[1, 3, -10, 0], id="FrontSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
-                                                orientation=[0, 3, -10, -45], id="LeftRGB"))
-        self._sensors.append(RgbSensor(self._vehicle,
+                                                orientation=[0, 3, -10, -45], id="LeftSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
-                                                orientation=[0, 3, -10, 45], id="RightRGB"))
-        self._sensors.append(RgbSensor(self._vehicle,
+                                                orientation=[0, 3, -10, 45], id="RightSS"))
+        self._sensors.append(SegmentationSensorTags(self._vehicle,
                                                 width=IMAGE_SHAPE[1], height=IMAGE_SHAPE[0],
-                                                orientation=[-1, 3, -10, 180], id="RearRGB"))
+                                                orientation=[-1, 3, -10, 180], id="RearSS"))
         # self._sensors.append(SegmentationSensorTags(self._vehicle,
         #                                         width=IMAGE_SHAPE[0], height=IMAGE_SHAPE[1],
         #                                         orientation=[0, 20, -90, 0], id="TopSS"))                                                
@@ -520,8 +504,8 @@ class BirdsEyeWrapper(ContinuousWrapper):
             control.brake = -reset["acceleration"]
         self._vehicle.apply_control(control)
         # sensors and state
-        self._sensors[-2].reset()
-        self._sensors[-1].reset()
+        self._sensors[1].reset()
+        self._sensors[2].reset()
         self.state.collisions = 0
         self.state.terminal = False
         self.state.position = (reset["position"][0],
@@ -540,11 +524,6 @@ class BirdsEyeWrapper(ContinuousWrapper):
         
         cam_data = data[:-2]
         dec_data = [x[::decimation, ::decimation] for x in cam_data]
-        # # debug block
-        # print("decimated data: " + str(dec_data[3].shape))
-        # cv2.imshow("testdec", dec_data[2])
-        # cv2.waitKey(1)
-
         def trim(x, trim_to_be_divisible_by):
             height, width = x.shape[0:2]
 
@@ -569,10 +548,7 @@ class BirdsEyeWrapper(ContinuousWrapper):
             # After mirror flipping we can transpose `y`
             y_out = np.fliplr(np.transpose(y_out, [1, 0, 2]))
 
-            #unwrap from 1 channel SS to number of classes (only if X/Y is ss with 1 channel)
-            for i in range(len(X_out)):
-                X_out[i] = unwrap_to_ohe(X_out[i], classes_numbers) if X_out[i].shape[2] is 1 else X_out[i] 
-            #X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
+            X_out = [unwrap_to_ohe(x, classes_numbers) for x in X_out]
             y_out = unwrap_to_ohe(y_out, classes_numbers)
 
             return X_out, y_out
@@ -584,23 +560,19 @@ class BirdsEyeWrapper(ContinuousWrapper):
             ])
             return np.transpose(x[..., 0], [1, 2, 0])
 
-
-        trimmed_data = list(map(lambda x: np.expand_dims(np.asarray(trim(x, trim_to_be_divisible_by)), axis=3), dec_data))
-        # trimmed_data = np.expand_dims(np.asarray(trim(dec_data[0], trim_to_be_divisible_by)), axis=3)
-        
-        # # debug block
-        # for i in range(len(trimmed_data)):
-        #     print("trimmed_data " + str(trimmed_data[i][:,:,:,0].shape))
-        #     cv2.imshow("testtrim" + str(i), trimmed_data[i][:,:,:,0])
-        #     cv2.waitKey(1)
+        trimmed_data = np.expand_dims(np.asarray(trim(dec_data[0], trim_to_be_divisible_by)), axis=3)
+        #trimmed_data = np.asarray(trim(dec_data[0], trim_to_be_divisible_by))
+        #trimmed_data = np.stack(trimmed_data)
 
         classes_numbers = class_names_to_class_numbers(CLASSES_NAMES)
 
-        zeros = np.expand_dims(np.zeros((96,144,3), dtype="uint8"), axis=3)
 
-        X = trimmed_data
-        # X = [trimmed_data, zeros, zeros, zeros]
-        Y = np.zeros((144,96,3,1))
+        zeros = np.expand_dims(np.zeros((96,144,1), dtype="uint8"), axis=3)
+        ae_input=[trimmed_data, zeros, zeros, zeros]
+        #ae_input = extract_observation_for_batch(ae_input, np.zeros((96,144,1,1), dtype="uint8"), 0, True, classes_numbers)
+
+        X = ae_input
+        Y = np.zeros((144,96,1,1))
 
         X_final, y_final = [[] for _ in range(len(X))], []
         X_out, y_out = extract_observation_for_batch(X, Y, 0, False, classes_numbers)
@@ -611,54 +583,33 @@ class BirdsEyeWrapper(ContinuousWrapper):
         X_final = [np.stack(x) for x in X_final]
         y_final = np.stack(y_final)
 
-        # ---- debug block
-        print("X_final[0] " + str(X_final[0].shape))
-        print("X_final[0][0] " + str(X_final[0][0].shape))
 
-        for i in range(len(X_final)):
-            cv2.imshow("test" + str(i), X_final[i][0])
-            cv2.waitKey(1)
-        # ---- debug block
 
-        ae_input = X_final + [y_final]
-        be_encoded = self.functor(ae_input)[0][0]
+        preds = self.ae.predict(X_final + [y_final], batch_size=1)
+        encoder_layer = self.ae.get_layer(name="encoder_submodel")
 
-        # --- predictions not needed for latent space extaction ----
-        # 
-        preds = self.ae.predict(ae_input, batch_size=1)
-        reconstructed_ss = preds[0]
-        reconstructed_be_ss = preds[5]
-        self.ss_rec = reconstructed_ss[0]
-        self.be_rec = reconstructed_be_ss[0]
-        # # visualize latent space vector
-        # reshaped_test = front_ss_encoded.reshape(8,8,1)
-        # cv2.imshow("latent", reshaped_test)
-        # cv2.waitKey(1)
-
-        # debug block
-        # cv2.imshow("testpreds", front_ss_encoded[0])
-        # cv2.waitKey(1)
+        #front_ss_encoded = encoder_layer.get_output_at(0)[2:]
+        front_ss_encoded = self.intermediate_model.predict(X_final[0], batch_size=1)
         #print(front_ss_encoded.shape)
-        
-        self.state.image = be_encoded
-        self.state.collision = data[-2]
+        self.state.image = front_ss_encoded
+        self.state.collision = data[1]
         if self.state.collision: self.state.collisions += 1
-        self.state.lane_invasion = data[-1]
+        self.state.lane_invasion = data[2]
+
 
 class FrontAEWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(FrontAEWrapper, self).__init__(world, spawn_point, render=render)
-        # model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models_not_ignored/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
-        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model_rgb_sweep=4_decimation=2_numclasses=3_valloss=0.061.h5"
-        #define loss to load model (doesn't really matter for inference though) 
-        weights_loss = np.array([0.18,0.18,0.64])
-        weighted_ce_loss =  weighted_categorical_crossentropy(weights_loss)
-        self.ae = load_model(model_filename, custom_objects={"loss":weighted_ce_loss})
+        model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models_not_ignored/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
+        self.ae = load_model(model_filename)
         # --- extract intermediate layer that contains latent space ---- #
         encoder_layer = self.ae.get_layer(name="dense_FrontRGB_1")
         encoded_in = self.ae.get_input_at(0)[0]
         encoded_out = encoder_layer.output
         self.functor = K.function([encoded_in], [encoded_out])
+
+        # self.intermediate_model = Model(inputs =self.ae.get_layer("encoder_submodel").get_input_at(0), 
+        #                       outputs=self.ae.get_layer("encoder_submodel").get_output_at(0))
 
     def _start(self, spawn_point, actor_model=None, actor_name=None):
         """Spawn actor and initialize sensors"""
@@ -718,8 +669,8 @@ class FrontAEWrapper(ContinuousWrapper):
             control.brake = -reset["acceleration"]
         self._vehicle.apply_control(control)
         # sensors and state
-        self._sensors[-2].reset()
-        self._sensors[-1].reset()
+        self._sensors[1].reset()
+        self._sensors[2].reset()
         self.state.collisions = 0
         self.state.terminal = False
         self.state.position = (reset["position"][0],
@@ -805,15 +756,14 @@ class FrontAEWrapper(ContinuousWrapper):
         X_final = [np.stack(x) for x in X_final]
         y_final = np.stack(y_final)
 
-        # # ----- debug block
+        # debug block
         # print("X_final[0] " + str(X_final[0].shape))
         # print("X_final[0][0] " + str(X_final[0][0].shape))
 
         # for i in range(len(X_final)):
         #     cv2.imshow("test" + str(i), X_final[i][0])
         #     cv2.waitKey(1)
-        # # ----- debug block
-        
+
         ae_input = X_final + [y_final]
         front_ss_encoded = self.functor([ae_input[0]])[0][0]
 
@@ -833,9 +783,9 @@ class FrontAEWrapper(ContinuousWrapper):
         #print(front_ss_encoded.shape)
         
         self.state.image = front_ss_encoded
-        self.state.collision = data[-2]
+        self.state.collision = data[1]
         if self.state.collision: self.state.collisions += 1
-        self.state.lane_invasion = data[-1]
+        self.state.lane_invasion = data[2]
 
 class DataGeneratorWrapper(ContinuousWrapper):
 
@@ -993,33 +943,3 @@ class DiscreteWrapper(BaseWrapper):
         # Enable simulation physics if disabled
         if not self._simulate_physics:
             self._togglePhysics()
-
-
-
-def weighted_categorical_crossentropy(weights):
-    """
-    A weighted version of keras.objectives.categorical_crossentropy
-    
-    Variables:
-        weights: numpy array of shape (C,) where C is the number of classes
-    
-    Usage:
-        weights = np.array([0.5,2,10]) # Class one at 0.5, class 2 twice the normal weights, class 3 10x.
-        loss = weighted_categorical_crossentropy(weights)
-        model.compile(loss=loss,optimizer='adam')
-    """
-    
-    #you need this to load the model (weird, keras!)
-    weights = K.variable(weights)
-        
-    def loss(y_true, y_pred):
-        # scale predictions so that the class probas of each sample sum to 1
-        y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
-        # clip to prevent NaN's and Inf's
-        y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
-        # calc
-        loss = y_true * K.log(y_pred) * weights
-        loss = -K.sum(loss, -1)
-        return loss
-    
-    return loss

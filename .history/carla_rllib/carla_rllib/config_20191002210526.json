@@ -1,7 +1,7 @@
 {
     "agent_type": "continuous",
     "maps": [
-        "Town05"
+        "Town07"
     ],
     "stable_baselines": true,
     "sync_mode": true,

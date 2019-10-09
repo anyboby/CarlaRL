@@ -16,6 +16,11 @@ CAMERA_IDS = [
     'FrontSS', 'LeftSS', 'RightSS', 'RearSS', 'TopSS'
 ]
 
+INPUT_IDS = [
+    "FrontSS", "LeftSS", "RightSS", "RearSS", "TopSS"
+]
+
+
 CLASSES_NAMES = [
     ['Roads', 'RoadLines'],
     
@@ -173,60 +178,115 @@ def get_multi_model(
         ae_outputs[inp_name] = Softmax(axis=3, name='decoded_from_'+inp_name)(ae_outputs[inp_name])
     
     for_final_reconstruction = []
-    side_cameras = [camera_id for camera_id in CAMERA_IDS if 'Top' not in camera_id]
+    side_cameras = [camera_id for camera_id in INPUT_IDS if 'Top' not in camera_id]
     for inp_name in side_cameras:
         x = Flatten()(all_bottlenecks[inp_name])
-        for _ in range(num_reconstruction_layers-1):
+        for i in range(num_reconstruction_layers-1):
             x = Dense(
                 2**central_reconstruction_exp,
                 activation=act,
                 kernel_regularizer=l2(l2_reg),
+                name = "dense_{}_{}".format(inp_name, i)
             )(x)
+            ## <--
+            ### Attention ! here is another bottleneck of the side camera images with heavier influence of the birds eye view! ###
 
-        x = Dense(
-                encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
-                activation=act,
-                kernel_regularizer=l2(l2_reg),
-            )(x)
+        # x = Dense(
+        #         encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
+        #         activation=act,
+        #         kernel_regularizer=l2(l2_reg),
+        #         name = "dense_{}_upscale".format(inp_name)
+        #     )(x)
 
-        x = Reshape(encoded_shape)(x)
-        x = Convolution2D(
-            encoded_shape[-1], 
-            (3, 3),
-            activation=act,
-            padding='same',
-            name='encoded_from_'+inp_name,
-        )(x)
+        # x = Reshape(encoded_shape)(x)
+        # x = Convolution2D(
+        #     encoded_shape[-1], 
+        #     (3, 3),
+        #     activation=act,
+        #     padding='same',
+        #     name='encoded_from_'+inp_name,
+        # )(x)
         for_final_reconstruction.append(x)
         
-    x = Concatenate()(for_final_reconstruction)
-    encoded_reconstruction = Convolution2D(
+    be_encoded = Concatenate()(for_final_reconstruction)
+    for i in range(2):
+        be_encoded = Dense(
+            2**(central_reconstruction_exp+1),
+            activation=act,
+            kernel_regularizer=l2(l2_reg),
+            name = "dense_{}_{}".format("birdseye_latent", i+1)
+        )(be_encoded)
+
+    #### birdseye bottleneck is here
+
+    be_encoded = Dense(
+        encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
+        activation=act,
+        kernel_regularizer=l2(l2_reg),
+        name = "dense_{}_upscale".format("birdseye")
+    )(be_encoded)
+
+    be_encoded = Reshape(encoded_shape)(be_encoded)
+
+    be_encoded = Convolution2D(
         encoded_shape[-1],
         (3, 3),
         activation=act,
-        padding='same',
-        name='before_reconstruction',
-    )(x)
-                
-    encoded_diff = Subtract(name='encoded_from_TopSS-encoded_reconstruction')([all_bottlenecks['TopSS'], encoded_reconstruction])
+        padding="same",
+        name="conv_birdseye_before_reconstruction",
+    )(be_encoded)
 
-    reconstruction = decoder_model(encoded_reconstruction)
-    reconstruction = Softmax(axis=3, name='reconstruction')(reconstruction)
+    encoded_diff = Subtract(name="encoded_from_TopSS-encoded_reconstruction")([all_bottlenecks["TopSS"], be_encoded])
+    
+    be_reconstruction = decoder_model(be_encoded)
+    be_reconstruction = Softmax(axis=3, name="birdseye_reconstruction")(be_reconstruction)
     
     outputs = (
         [ae_outputs[inp_name] for inp_name in input_names]
-        + [reconstruction]
+        + [be_reconstruction]
         + [encoded_diff]
     )
     inputs = [inputs[inp_name] for inp_name in input_names]
 
     return Model(inputs, outputs)
 
+
+
+def weighted_categorical_crossentropy(weights):
+    """
+    A weighted version of keras.objectives.categorical_crossentropy
+    
+    Variables:
+        weights: numpy array of shape (C,) where C is the number of classes
+    
+    Usage:
+        weights = np.array([0.5,2,10]) # Class one at 0.5, class 2 twice the normal weights, class 3 10x.
+        loss = weighted_categorical_crossentropy(weights)
+        model.compile(loss=loss,optimizer='adam')
+    """
+    
+    weights = K.variable(weights)
+        
+    def loss(y_true, y_pred):
+        # scale predictions so that the class probas of each sample sum to 1
+        y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
+        # clip to prevent NaN's and Inf's
+        y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+        # calc
+        loss = y_true * K.log(y_pred) * weights
+        loss = -K.sum(loss, -1)
+        return loss
+    
+    return loss
+
+
+####### ---------------- definitions end ---------------- #############
+
 num_ae_layers = 3
 central_ae_exp = 5
 patience = 10
 num_sweeps = 24
-validation_episodes_for_movies = [12, 45, 101]
+validation_episodes_for_movies = [4, 76, 104]
 
 bottleneck_dim = (
     BATCH_SIZE,
@@ -245,8 +305,13 @@ multi_model = get_multi_model(
     num_reconstruction_layers=3, central_reconstruction_exp=6,
     act='elu', l2_reg=1e-3,
 )
+
+weights_loss = np.array([2.0,0.5,10])
+weighted_ce_loss =  weighted_categorical_crossentropy(weights_loss)
+
 multi_model.compile(
-    loss=6*['categorical_crossentropy'] + ['mse'],
+    # loss=6*['categorical_crossentropy'] + ['mse'],
+    loss=6*[weighted_ce_loss] + ['mse'],
     loss_weights=5*[1] + [1] + [1],
     optimizer=Adam(1e-4)
 )
@@ -257,7 +322,7 @@ early_stopping = EarlyStopping(
     restore_best_weights=True,
 )
 
-storage = get_X_and_Y(['Town05'],  [0, 1, 2, 3, 4, 5, 6, 7, 106, 107, 108, 109], DECIMATION, CAMERA_IDS)
+storage = get_X_and_Y(['Town05'],  [1,2,3,4,5,6,7,73,74,75,76,77,78,79,103,104,105,106,107,108,109], DECIMATION, CAMERA_IDS)
 X_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' not in id_]
 Y_val = [storage[id_] for id_ in CAMERA_IDS if 'Top' in id_][0]
 valid_gen = batcher(
@@ -267,15 +332,19 @@ valid_gen = batcher(
 )
 
 MULTI_MODEL_EPISODES = [
-range(8, 16),
+    #range(0, 8),
+    range(8, 16),
     range(16, 24),
     range(24, 32),
     range(32, 40),
-    range(40, 48),
+    range(40,48),
     range(48, 56),
     range(56, 64),
-    range(72, 80),
+    range(64, 72),
+    #range(72, 80),
     range(88, 96),
+    range(96, 102),
+    #range(102, 109)
 ]
 
 # I've also tried our a recurrent model, for which I used
@@ -330,7 +399,7 @@ for sweep in range(num_sweeps):
         
         histories.append(history.history)
         
-    val_loss = history.history['val_reconstruction_loss'][-(patience+1)]
+    val_loss = history.history['val_birdseye_reconstruction_loss'][-(patience+1)]
     model_filename = 'models/multi_model__sweep={}_decimation={}_numclasses={}_valloss={:.3f}.h5'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)
     multi_model.save(model_filename)
     histories_filename = 'histories/multi_model__sweep={}_decimation={}_numclasses={}_valloss={:.3f}.pkl'.format(sweep, DECIMATION, len(CLASSES_NAMES), val_loss)

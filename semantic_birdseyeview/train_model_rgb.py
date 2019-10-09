@@ -284,6 +284,8 @@ def get_multi_model(
 
     return Model(inputs, outputs)
 
+# num_ae_layers = 7
+# central_ae_exp = 3
 num_ae_layers = 3
 central_ae_exp = 5
 patience = 10

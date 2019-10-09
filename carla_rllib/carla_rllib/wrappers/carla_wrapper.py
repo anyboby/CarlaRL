@@ -611,14 +611,14 @@ class BirdsEyeWrapper(ContinuousWrapper):
         X_final = [np.stack(x) for x in X_final]
         y_final = np.stack(y_final)
 
-        # ---- debug block
-        print("X_final[0] " + str(X_final[0].shape))
-        print("X_final[0][0] " + str(X_final[0][0].shape))
+        # # ---- debug block
+        # print("X_final[0] " + str(X_final[0].shape))
+        # print("X_final[0][0] " + str(X_final[0][0].shape))
 
-        for i in range(len(X_final)):
-            cv2.imshow("test" + str(i), X_final[i][0])
-            cv2.waitKey(1)
-        # ---- debug block
+        # for i in range(len(X_final)):
+        #     cv2.imshow("test" + str(i), X_final[i][0])
+        #     cv2.waitKey(1)
+        # # ---- debug block
 
         ae_input = X_final + [y_final]
         be_encoded = self.functor(ae_input)[0][0]
@@ -649,7 +649,7 @@ class FrontAEWrapper(ContinuousWrapper):
     def __init__(self, world, spawn_point, render=False):
         super(FrontAEWrapper, self).__init__(world, spawn_point, render=render)
         # model_filename = "/disk/no_backup/rottach/ml_praktikum_ss2019_group2/semantic_birdseyeview/models_not_ignored/multi_model__sweep=7_decimation=2_numclasses=3_valloss=0.202.h5"
-        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model_rgb_sweep=4_decimation=2_numclasses=3_valloss=0.061.h5"
+        model_filename = "/media/mo/Sync/Sync/Uni/Projektpraktikum Maschinelles Lernen/Workspace/ml_praktikum_ss2019_group2/semantic_birdseyeview/models/multi_model_rgb_sweep=18_decimation=2_numclasses=3_valloss=0.059.h5"
         #define loss to load model (doesn't really matter for inference though) 
         weights_loss = np.array([0.18,0.18,0.64])
         weighted_ce_loss =  weighted_categorical_crossentropy(weights_loss)

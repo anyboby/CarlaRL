@@ -47,8 +47,8 @@ class BaseEnv(gym.Env):
 
         # some flags for wrapper selection, only use one
         self._data_gen = False
-        self._use_front_ae = False
-        self._use_birdseye = True
+        self._use_front_ae = True
+        self._use_birdseye = False
         data_gen_shape, front_ae_shape, birdseye_shape = (64,64,1), (64,), (128,) 
 
         print("-----Starting Environment-----")
@@ -439,13 +439,13 @@ class BaseEnv(gym.Env):
         dist_to_middle_lane_incr = self.dist_to_middle_lane - dist_to_middle_lane
         collision_penalty = 0
         if collisions == True:
-            collision_penalty = 50
+            collision_penalty = 80
         # Update memory values
         self.lane_invasion = lane_invasion
         self.dist_to_middle_lane = dist_to_middle_lane
         self._prev_action = self._action
         self._current_position = position
-        reward = -0.1
+        reward = -0.01
         # The velocity should be added to the input, otherwise the approach with a max velocity wont work
         #print("vel:", 0.4 * velocity)
         #print("del:", - 0.01 * abs(delta_heading))

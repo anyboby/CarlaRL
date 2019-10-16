@@ -1,0 +1,174 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+                                                          % you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+
+%%%%%%%%%% my includes %%%
+
+\usepackage{url}      % needed for ieeetran bib style
+\usepackage{graphicx}
+
+% possible subfigure packages
+%\usepackage{subfigure}
+%\usepackage[caption=false,font=footnotesize]{subfig}
+
+\usepackage[colorinlistoftodos, german]{todonotes} % Option 'disable' entfernt alle ToDos
+
+\usepackage[utf8]{inputenc}
+
+\usepackage[font=footnotesize]{caption}
+\usepackage[font=footnotesize]{subcaption}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{defn}[thm]{Definition}
+
+
+\usepackage{hyperref}
+
+%\usepackage[style=plain,citestyle=numeric,bibstyle=numeric,sorting=none,url=false,doi=false,isbn=false]{biblatex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\title{\LARGE \bf
+Preparation of Papers for IEEE Sponsored Conferences \& Symposia*
+}
+
+\author{Florian Kuhnt$^{1}$ and J. Marius Z\"ollner$^{1}$ % <-this % stops a space
+\thanks{$^{1}$The authors are with FZI Research Center for Information Technology, Haid-und-Neu-Str. 10-14, 76131 Karlsruhe, Germany
+%        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
+        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
+}        
+        
+\begin{document}
+
+
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+
+This electronic document is a ÒliveÓ template. The various components of your paper [title, text, heads, etc.] are already defined on the style sheet, as illustrated by the portions given in this document.
+
+\end{abstract}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+%This template provides authors with most of the formatting specifications needed for preparing electronic versions of their papers. All standard paper components have been specified for three reasons: (1) ease of use when formatting individual papers, (2) automatic compliance to electronic requirements that facilitate the concurrent or later production of electronic products, and (3) conformity of style throughout a conference proceedings. Margins, column widths, line spacing, and type styles are built-in; examples of the type styles are provided throughout this document and are identified in italic type, within parentheses, following the example. Some components, such as multi-leveled equations, graphics, and tables are not prescribed, although the various table text styles are provided. The formatter will need to create these components, incorporating the applicable criteria that follow.
+
+%Example Citation: \cite{Barth2008}.
+
+The task of teaching vehicles how to drive autonomously in urban scenarios is a challenging and complex one to solve. Not only is there the problem of finding the adequate response to a given situation but also the challenge of taking into account the surrounding factors that have an influence on the state that a vehicle is in and its possible actions. To date, most approaches focus on the manual design of behavioral policies, such as defining a driving policy through the use of annotated maps. While these solutions might work in situations which are documented by the provided mapping infrastructure, they are often difficult to generalize or scale, as they do not necessarily enable the comprehension of any given local scene. In order to make autonomous driving truly feasible in a real-world scenario it would be better to develop systems which are able to find their way without having to rely on an explicit set of rules. One possible solution to this task is provided by reinforcement learning methods. Here, the agent, i.e. the vehicle, actively searches for the optimal driving policy whilst trying to maximize a numerical reward signal. As opposed to imitation learning techniques, which have been popular in finding driving policies (1), reinforment learning algorithms enable a car to exceed human abilities, if applied correctly. In recent years, deep reinforcement learning methods have proven to be succesful in solving complex tasks such as playing GO (2) or Atari (3) and there have been efforts in tackling various problems in the field of autonomous driving, including continous control tasks (4).
+
+However, two major drawbacks of reinforcement learning methods are their heavy depency on adequate input state representations (5) and, as with other machine learning techniques, their need of a sufficient amount of accurate sample data to train on. In order to be able to train safely on an adequate amount of data, one approach is the use of data from other domains. For this purpose, the urban driving simulator CARLA has been developed, which is used as a simulation environment for this project.
+
+In this paper, several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering different driving tasks. Additionally, reward functions for the respective problems are tested and several input represantations are designed and evaluated.
+
+?? What is it exactly that we contributed that is new to already existing research??
+
+%\subsection{Problem specification}
+%\subsection{Why RL? What is our goal/motivation?}
+
+\section{Related Work}
+
+%“Human-level control through deep reinforcement learning” (2015)
+%“CARLA: An Open Urban Driving Simulator”
+%Our contribution to the field
+
+\section{Background}
+
+In this project, three differnt algorithms are used. Following the work of (Lillicrap et al.) and (Mnih et al.), the (DDPG)- and (A3C) algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0*. Later on, the PPO algorithm is applied to solve a continuous control task in CARLA.
+
+%\subsection{CarRacing - Understand and select algorithms}
+%\subsubsection{Preprocessing}
+%\subsubsection{DQN}
+\subsection{A3C}
+%\paragraph{Model architecture}
+%\paragraph{Training details}
+\subsection{DDPG}
+One very notable advance in reinforcement learning has been made by the development of the so-called "Deep Q Network" (Mnih et al., 2015). The DQN is able to solve tasks with high-dimensional observation spaces. However, it is only efficiently capable of working with discrete and low-dimensional action spaces. In order to adapt a (DQN) for the successful use with continuous control problems, as given in CarRacing-v0, a discretization of the action space has to be carried out, which can lead to two main difficulties: an explosion in the number of possible actions and the loss of important information (4).
+
+To evade these obstacles (Lillicrap et al.) propose a new approach, called the Deep Deterministic Policy Gradient (DDPG), which is a model-free, off-policy actor-critic algorithm. They adopt the advantages of (DQN) and combine them with the actor-critic framework, resulting in the stabilization of Q-learning by using a replay buffer and soft updates on the target networks of both actor and critic, through
+
+\begin{equation}
+\tau << 1:\theta' \leftarrow \tau\theta + (1-\tau)\theta'
+\end{equation}
+
+and finding a deterministic policy.
+
+\paragraph{Model architecture}
+\paragraph{Training details}
+
+\subsection{CARLA}
+
+\section{Concept}
+%\subsubsection{State representation}
+%\subsubsection{Used sensors}
+%\subsubsection{Implementing the reward function}
+
+\section{Evaluation}
+
+\subsection{Results}
+\subsection{Comparison algorithms/reward functions}
+
+\section{Conclusions}
+
+
+\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
+
+
+
+
+
+
+
+
+
+
+\newpage
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,04_mendeley-export/library}
+
+
+
+\end{document}

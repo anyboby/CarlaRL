@@ -1,0 +1,13 @@
+# if using a separate build folder:
+build
+
+# building in main folder:
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+
+# vim swap
+*.swp

@@ -175,7 +175,7 @@ def weighted_categorical_crossentropy(weights):
 
 
 def get_multi_model(
-    input_shape, input_names, output_shape,
+    input_shape, input_names,
     num_ae_layers=4, central_ae_exp=3,
     num_reconstruction_layers=3, central_reconstruction_exp=6,
     act='elu', l2_reg=1e-3,
@@ -195,7 +195,7 @@ def get_multi_model(
     encoded_shape = K.int_shape(encoder_model.output)[1:]
     
     decoder_model = get_conv_decoder_model(
-        encoded_shape, output_shape,
+        encoded_shape, input_shape,
         num_ae_layers, central_ae_exp, act, l2_reg,
     )
     
@@ -212,78 +212,56 @@ def get_multi_model(
         ae_outputs[inp_name] = Softmax(axis=3, name='decoded_from_'+inp_name)(ae_outputs[inp_name])
     
     for_final_reconstruction = []
-    side_cameras = [camera_id for camera_id in INPUT_IDS if 'Top' not in camera_id]
+    side_cameras = [camera_id for camera_id in CAMERA_IDS if 'Top' not in camera_id]
     for inp_name in side_cameras:
         x = Flatten()(all_bottlenecks[inp_name])
-        for i in range(num_reconstruction_layers-1):
+        for _ in range(num_reconstruction_layers-1):
             x = Dense(
                 2**central_reconstruction_exp,
                 activation=act,
                 kernel_regularizer=l2(l2_reg),
-                name = "dense_{}_{}".format(inp_name, i)
             )(x)
-            ## <--
-            ### Attention ! here is another bottleneck of the side camera images with heavier influence of the birds eye view! ###
 
-        # x = Dense(
-        #         encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
-        #         activation=act,
-        #         kernel_regularizer=l2(l2_reg),
-        #         name = "dense_{}_upscale".format(inp_name)
-        #     )(x)
+        x = Dense(
+                encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
+                activation=act,
+                kernel_regularizer=l2(l2_reg),
+            )(x)
 
-        # x = Reshape(encoded_shape)(x)
-        # x = Convolution2D(
-        #     encoded_shape[-1], 
-        #     (3, 3),
-        #     activation=act,
-        #     padding='same',
-        #     name='encoded_from_'+inp_name,
-        # )(x)
+        x = Reshape(encoded_shape)(x)
+        x = Convolution2D(
+            encoded_shape[-1], 
+            (3, 3),
+            activation=act,
+            padding='same',
+            name='encoded_from_'+inp_name,
+        )(x)
         for_final_reconstruction.append(x)
         
-    be_encoded = Concatenate()(for_final_reconstruction)
-    for i in range(2):
-        be_encoded = Dense(
-            2**(central_reconstruction_exp+1),
-            activation=act,
-            kernel_regularizer=l2(l2_reg),
-            name = "dense_{}_{}".format("birdseye_latent", i+1)
-        )(be_encoded)
-
-    #### birdseye bottleneck is here
-
-    be_encoded = Dense(
-        encoded_shape[0] * encoded_shape[1] * encoded_shape[2],
-        activation=act,
-        kernel_regularizer=l2(l2_reg),
-        name = "dense_{}_upscale".format("birdseye")
-    )(be_encoded)
-
-    be_encoded = Reshape(encoded_shape)(be_encoded)
-
-    be_encoded = Convolution2D(
+    x = Concatenate()(for_final_reconstruction)
+    encoded_reconstruction = Convolution2D(
         encoded_shape[-1],
         (3, 3),
         activation=act,
-        padding="same",
-        name="conv_birdseye_before_reconstruction",
-    )(be_encoded)
+        padding='same',
+        name='before_reconstruction',
+    )(x)
+                
+    encoded_diff = Subtract(name='encoded_from_TopSS-encoded_reconstruction')([all_bottlenecks['TopSS'], encoded_reconstruction])
 
-    encoded_diff = Subtract(name="encoded_from_TopSS-encoded_reconstruction")([all_bottlenecks["TopSS"], be_encoded])
-    
-    be_reconstruction = decoder_model(be_encoded)
-    be_reconstruction = Softmax(axis=3, name="birdseye_reconstruction")(be_reconstruction)
+    reconstruction = decoder_model(encoded_reconstruction)
+    reconstruction = Softmax(axis=3, name='reconstruction')(reconstruction)
     
     outputs = (
         [ae_outputs[inp_name] for inp_name in input_names]
-        + [be_reconstruction]
+        + [reconstruction]
         + [encoded_diff]
     )
     inputs = [inputs[inp_name] for inp_name in input_names]
 
     return Model(inputs, outputs)
 
+    
 # num_ae_layers = 7
 # central_ae_exp = 3
 num_ae_layers = 3

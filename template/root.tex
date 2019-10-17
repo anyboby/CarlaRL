@@ -24,6 +24,8 @@
 
 \usepackage{url}      % needed for ieeetran bib style
 \usepackage{graphicx}
+\graphicspath{{./03_graphics/}}
+
 
 % possible subfigure packages
 %\usepackage{subfigure}
@@ -95,6 +97,7 @@ Example Citation: \cite{Barth2008}.
 \subsubsection{Preprocessing}
 \subsubsection{DQN}
 \subsubsection{A3C}
+
 \paragraph{Model architecture}
 \paragraph{Training details}
 \subsubsection{DDPG}
@@ -103,7 +106,54 @@ Example Citation: \cite{Barth2008}.
 
 \subsection{CARLA}
 \subsubsection{State representation}
-\subsubsection{Used sensors}
+Dealing with the high-dimensional environment in CARLA is one of the central challenges in implementing a well functioning 
+RL algorithm. In consideration of an abundance of possible sensor types available in CARLA we decided to pursue increasing
+levels of realism which generally also correspond to increasing levels of difficulty. These aforementioned levels of realism involve the following:
+\begin{itemize}
+    \item Ground truth segmented bird's eye view
+    \item Ground truth segmented front view
+    \item Latent space generated from ground truth segmented images
+    \item Latent space generated from rgb images
+\end{itemize}
+Notably, these input representations differ in dimensions and thus lead to different network architectures in the appended network architectures 
+of the RL agent. 
+\paragraph{Ground truth segmented bird's eye view}
+The Ground truth segmented bird's eye view is a rather unrealistic scenario, in which we assume availability of a camera positioned 
+20m above the performing agent. It is merely imaginable in a fully observed city where autonomous driving is part of a high-level traffic 
+control system. Albeit rather unrealistic, we decided to implement a 13-class ground truth segmented bird's eye view due to its similarity to 
+the CarRacing 
+environment and its obvious advantages in containing information central to navigational tasks. The full list of the 
+included classes are described by dosovitskiy et al.\cite{dosovitskiy2017carla}. We deemed a 1-channel 
+grayscale image with size 64x64 
+large enough to contain key information for the algorithm (fig. x l.)
+
+\begin{figure}[thpb]
+    \centering
+    \framebox{\parbox{3in}{
+    \includegraphics[scale=.271]{gt_combined.png}
+    }}
+    \caption{left: Ground truth segmented bird's eye view image, 64x64 in grayscale, 9 classes
+    right: Ground truth segmented front view image, 80x80 in grayscale, 9 classes}
+        \label{figurelabel}
+        \end{figure}
+
+\paragraph{Ground truth segmented frontview}
+Much like the Ground truth segmented bird's eye view, the corresponding front view input representation assumes the availability of a 
+perfect segmentation camera. Nonetheless, we increase realism with this representation as the camera is placed in front of the car.
+Again, we chose a 9-class, 1-channel grayscale image with a slightly increased size of 80x80 to account for a larger view angle of the 
+camera. 
+\paragraph{Latent space generated from ground truth segmented images}
+In this section we will further discuss a modified version of the integrated encoder-decoder network that is based on 
+dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. In its original architecture, the network comprises 
+5 input tensors and 7 output tensors with the inputs representing images of a front-, rear-, left-, right, and top-view camera. The 
+model is built with the Keras functional API and generally serves two purposes. On the one hand, each input tensor is encoded into 
+a 64-sized feature vector and decoded into it's original shape with a cross entropy loss with regard to the original input. This is 
+achieved with separate branches of 3-5 layered Convolutional Networks which can be considered autoencoders of their own. On the other 
+hand, a separate generative branch creates a bird's eye view reconstruction based on the concatenated feature vectors of the 
+vehicle-based cameras. 
+
+
+\subsubsection{Used Sensors}
 \subsubsection{Implementing the reward function}
 
 

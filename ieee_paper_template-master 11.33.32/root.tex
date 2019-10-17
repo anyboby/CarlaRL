@@ -68,7 +68,19 @@ Preparation of Papers for IEEE Sponsored Conferences \& Symposia*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-This electronic document is a ÒliveÓ template. The various components of your paper [title, text, heads, etc.] are already defined on the style sheet, as illustrated by the portions given in this document.
+%This electronic document is a ÒliveÓ template. The various components of your paper [title, text, heads, etc.] are already defined on the style sheet, as illustrated by the portions given in this document.
+
+Style:
+\begin{itemize}
+	\item Written last
+	\item 100-250 words
+	\item Past tense
+\end{itemize}
+
+Content:
+\begin{itemize}
+	\item Condensed version of entire article
+\end{itemize}
 
 \end{abstract}
 
@@ -99,14 +111,18 @@ In this paper, several state-of-the-art reinforcement learning algorithms are im
 
 \section{Background}
 
-In this project, three differnt algorithms are used. Following the work of (Lillicrap et al.) and (Mnih et al.), the (DDPG)- and (A3C) algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0*. Later on, the PPO algorithm is applied to solve a continuous control task in CARLA.
+We regard the typical reinforcement learning setting where an agent interacts with an environment $\mathcal{E}$. At each one of a number of discrete timesteps $t$ the agent decides on taking an action $a_t$ from a given set of actions $\mathcal{A}$. This is done based on the state $s_t$ that the agent is currently in and following a policy $\pi$, which is a mapping of the possible states to the action space $\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})$. In this case, $\pi$ is stochastic, as it returns the probability distribution over the possible actions, and the action space is continuous.
+
+As a result, the agent receives a reward $r_t$ and the subsequent state $s_{t+1}$ of his environment. The setup is assumed to follow the properties of a Markov decision process, where besides state space $\mathcal{S}$, action space $\mathcal{A}$ and reward function $r(s_t,a_t)$, we also include the transition function to the future states $p(s_{t+1}|s_t,a_t)$.
+
+\section{Concept/Methods and Models}
+
+In the course of this project, three differnt algorithms are used. Following the work of Lillicrap et al. (4) and Mnih et al. (6), the (DDPG)- and (A3C) algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0. Later on, the PPO algorithm is applied to solve a continuous control task in the CARLA simulator.
 
 %\subsection{CarRacing - Understand and select algorithms}
 %\subsubsection{Preprocessing}
 %\subsubsection{DQN}
-\subsection{A3C}
-%\paragraph{Model architecture}
-%\paragraph{Training details}
+
 \subsection{DDPG}
 One very notable advance in reinforcement learning has been made by the development of the so-called "Deep Q Network" (Mnih et al., 2015). The DQN is able to solve tasks with high-dimensional observation spaces. However, it is only efficiently capable of working with discrete and low-dimensional action spaces. In order to adapt a (DQN) for the successful use with continuous control problems, as given in CarRacing-v0, a discretization of the action space has to be carried out, which can lead to two main difficulties: an explosion in the number of possible actions and the loss of important information (4).
 
@@ -118,22 +134,35 @@ To evade these obstacles (Lillicrap et al.) propose a new approach, called the D
 
 and finding a deterministic policy.
 
-\paragraph{Model architecture}
-\paragraph{Training details}
+Noise with Ornstein-Uhlenbeck
 
-\subsection{CARLA}
+\subsection{A3C}
+\subsection{PPO}
+\subsection{Reward function}
+\subsection{Input representation}
+\subsection{Autoencoder/Latent space}
+\subsection{Training}
 
-\section{Concept}
-%\subsubsection{State representation}
-%\subsubsection{Used sensors}
-%\subsubsection{Implementing the reward function}
+%\subsection{CARLA}
 
 \section{Evaluation}
+
+\subsection{CarRacing-v0}
+\subsection{CARLA}
 
 \subsection{Results}
 \subsection{Comparison algorithms/reward functions}
 
 \section{Conclusions}
+
+\begin{itemize}
+      \item Similar to the abstract but more detail
+      \item Conclusion of the key points of each section
+      \item Summary of main findings
+      \item Important conclusions that can be drawn
+      \item Discuss benefits and shortcomings of our approach
+      \item Suggest future areas of research
+   \end{itemize}
 
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
@@ -168,6 +197,11 @@ and finding a deterministic policy.
 
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv,04_mendeley-export/library}
+
+
+\newpage
+
+\appendices
 
 
 

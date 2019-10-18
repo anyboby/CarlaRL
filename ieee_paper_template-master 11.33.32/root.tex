@@ -47,10 +47,10 @@
 
 
 \title{\LARGE \bf
-Preparation of Papers for IEEE Sponsored Conferences \& Symposia*
+Deep Reinforcement Learning with Continuous Control in CARLA
 }
 
-\author{Florian Kuhnt$^{1}$ and J. Marius Z\"ollner$^{1}$ % <-this % stops a space
+\author{Moritz Zanger$^{1}$Florian Rottach$^{1}$Izel Kilinic$^{1}$ % <-this % stops a space
 \thanks{$^{1}$The authors are with FZI Research Center for Information Technology, Haid-und-Neu-Str. 10-14, 76131 Karlsruhe, Germany
 %        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
         {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
@@ -118,7 +118,7 @@ As a result, the agent receives a reward $r_t$ and the subsequent state $s_{t+1}
 \section{Concept/Methods and Models}
 
 In the course of this project, three differnt algorithms are used. Following the work of Lillicrap et al. (4) and Mnih et al. (6), the (DDPG)- and (A3C) algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0. Later on, the PPO algorithm is applied to solve a continuous control task in the CARLA simulator.
-
+TODO: Hier unser Konzept analog zur Präsentation vorstellen (Slide mit den 4 Kasten)
 %\subsection{CarRacing - Understand and select algorithms}
 %\subsubsection{Preprocessing}
 %\subsubsection{DQN}
@@ -139,9 +139,53 @@ Noise with Ornstein-Uhlenbeck
 \subsection{A3C}
 \subsection{PPO}
 \subsection{Reward function}
+The design of the reward function turned out to be a much more difficult procedure as expected initially. The already provided rewards in gym's CarRacing environment were rather simple and still led to a good result in the end. For CARLA however, it was necessary to invest more time into the engineering and designing of a suitable inducement system, because the driving behavior depended on more factors and the performance metric was not just driving as fast as possible. In the following, the process of arriving at our final reward function will be described. \newline 
+In the first step, we investigated possible sensor inputs that might have an impact on the driving behavior and discussed on their impact. The outcome is summarized in the following table:
+\newline 
+
+TODO: Schön formatieren
+\begin{tabular}{ | l | l | l | p{5cm} |}
+\hline
+Per frame penalty & Forces agent to move \\
+\hline
+Lane invasion counter & As few lane changes as possible \\
+\hline
+Steering angle change & Avoids oszillations \\
+\hline
+Delta heading  & Drive as straight as possible relative to road \\
+\hline
+Position change & Maximize travelled distance \\
+\hline
+Collision binary per frame & Avoid crashes  \\
+\hline
+Velocity & Drive fast under the other constraints\\
+\hline
+Distance to middle lane & Drive as centered as possible\\
+\hline
+\end{tabular}
+\newline
+
+We started with incrementally adding these attributes to our reward calculation and quickly realized, that the main challenge is to adjust the weights and harmonize the contrary effects of the terms.
+An example would be, that giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays few attention on lane invasions. On the opposite side, the agent will drive only very slowly or even not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but rather several possible components, this results in a complex combinatorical problem that can either be solved by trail and error or applying permutation optimization techniques. To achieve initial results, we started to discover a proper reward function "by hand". 
+\newline
+We pruned the above list by applying the following considerations that resulted from tesing different approaches. Firstly, some components show a redundant behavior and hence one of them can be removed. An example would be the velocity and the position change - both contain the same information. Further, the attributes lane invasion and steering angle didnn't affect the driving behavior in a positive way. The two most important parameters turned out be the velocity and the delta heading, which expressed the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in the following table:
+\newline
+TODO: Werte aus Präsentation übernehmen
+\begin{tabular}{ | l | l | l | p{5cm} |}
+	\hline
+	hier & drei & spalten
+\end{tabular}
+\newline
+
+The result is very promising and can be summarized as follows: The agent is capable of driving smoothly within the right lane and can perform turn manuevers on most intersections. It attempts to drive around other vehicles, but is not capable of breaking. We trained different models on this reward function and all of them had a good performance compared to other functions.
+
+
 \subsection{Input representation}
+TODO: Analog zu Präsentation aufbauen
 \subsection{Autoencoder/Latent space}
+TODO: Encoder-decoder architecture bzw. Generator nennen
 \subsection{Training}
+TODO: Training beschreiben analog zur präsentation (vgl folien)
 
 %\subsection{CARLA}
 

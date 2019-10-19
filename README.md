@@ -1,24 +1,40 @@
-# Prerequisites
+# How to use the repository
+### Models
+- The models can be found under ddpg/CARLA or stable_baselines/carla_env_MIF or A3C_continuous
+- For the stable baselines models use the parameters MODE and SMODE to define the model and the running mode
+- For the DDPG use the run.py for configuration and start up
+- Models can also be reloaded in the stable baselines file, we pushed some of the models - the most recent ones perform the best
+- We have also pushed a custom PPO implementation
 
+### Birds-eye-view
+- The implementation of the encoder-decoder architecture can be found under semantic_birdseyeview
+- There are also some models pushed
+- use the files train_model* to train the birds-eye-view based on sample images
+
+### Wrapper
+- We used the carla_rllib wrapper from Sven Müller
+- We have done some adjustments for the terminal condition and the sensor types under carlarllib/wrapper/carla_wrapper.py
+- The observation space and reward function are modified in carlarllib/environment/carla_environment/carla_environment.py
+
+
+
+
+
+
+
+## Prerequisites
 virtualenv -p python3 carla_env
 source carla_env/bin/activate
-pip install pygame numpy networkx
+pip install -r requirements.txt
 
-##Virtual env erzeugen:
-
-
-virtualenv -p python3 carla_env
-source carla_env/bin/activate 
-
-##Bashrc anpassen:
+## Bashrc anpassen:
 CARLA_ROOT="/fzi/ids/rottach/no_backup/carla_0.9.6"
 export CARLA_ROOT
 alias sbas="source ~/.bashrc"
 alias ebas="vim ~/.bashrc"
 alias source_carla="source ~/no_backup/carla_env/bin/activate"
 
-# Installation CARLA 0.9.6 
-
+## Installation CARLA 0.9.6 
 0. get CARLA 0.9.6
 	copy precompiled version from sven mueller
 	
@@ -61,10 +77,3 @@ alias source_carla="source ~/no_backup/carla_env/bin/activate"
 8. run CARLA_UE4.sh (or SDL_VIDEODRIVER=offscreen SDL_HINT_CUDA_DEVICE=0 sh CarlaUE4.sh )
 9. run wrapper test files (somewhere in carla_rllib/examples)
 	$ python carla_env_test.py 
-
-	
-
-# Notes
-- use tensorflow-gpu==1.11.0 for stable baselines
-- in carla config default render engine ?ndern
--> r.TextureStreaming=True in Config

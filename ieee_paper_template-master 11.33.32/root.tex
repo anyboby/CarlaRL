@@ -345,20 +345,28 @@ The learning behavior usually increased until 200k steps and started to stagnate
 %\subsection{CARLA}
 
 \section{Evaluation}
-
 \subsection{CarRacing-v0}
+Due to the simple input structure and the straight-forward reward system we achieved stable results, even with using not the most-advanced learning algorithms (We consider the PPO as an improvement over the DDPG). Also the A3C could generate promising results (average rewards around 700) with only few training time.  In total, these results can be explained by the simplicity of the environment. However, here we invested more time on the finetuning of the hyperparameters compared with CARLA.
 \subsection{CARLA}
-
+The CARLA simulation environment is far more complex than the previous environment we worked with. Additionally, it was neccessary to implement the observations, terminal conditions as well as the reward function, where a lot of time was invested. The application of the stable-baselines algorithms is rather straight-forward. Hence, the challenging part here was merely the environment itself. 
 \subsection{Results}
-\subsection{Comparison algorithms/reward functions}
+TODO: Mit Concept vergleichen und formulieren welche Ziele erreicht wurden / wo es probleme gab (analog zur präsi)
 
-\section{Conclusions}
---- mo 
+--- mo
 Despite the weighted categorical cross entropy loss, the network struggled with
 reconstructing pixels of the \textit{vehicle and obstacles} class. 
 Aside from improving training data and network parameters, we 
 consider a more sophisticated encoding model as crucial for better results. 
 --- mo
+\subsection{Comparison algorithms/reward functions}
+
+\section{Conclusions}
+As result of this practical seminar we have successfully applied different deep reinforcement approaches to the CARLA environment and finally achieved a stable and promising lane-keeping behavior for the agent. This was achieved by a combination of finding the most suitable input representation for smooth driving, finetuning of the rewardfunction and identification of the best performing hyperparameters. The outcome proves that reinforcement learning can be applied to complex environments as well as long as the desired behavior is incooperated in the reward system. Furthermore, we could prove that the birds-eye-view leads to a better performance as a single front camera and is also feasible in a real-world setup by generating the representation from four cameras surrounding the car. In the training process we recommend to not use early-termination for the episodes, especially if the reward function contains negative components, since this increases the probability that the agent starts to drive off the track as soon as possible. Finally, we emphasize that the driving behavior has the potential to be even further improved in the future by selecting better data, learning algorithms and an optimal reward function. We can also imagine, that the involvement of further attributes in the model such as the current velocity can be used to describe even more complex driving situations.  \newline
+For the future we additionally suggest a combination of the birds-eye-view with a front camera in order to enable the identification of traffic signs and traffic lights, which wouldn't be possible from above. Also, we assume that the improvement of the encoder-decoder architecture could boost the learning speed and overall performance.
+
+
+
+
 \begin{itemize}
       \item Similar to the abstract but more detail
       \item Conclusion of the key points of each section

@@ -147,6 +147,14 @@ and finding a deterministic policy.
 Noise with Ornstein-Uhlenbeck
 
 \subsection{A3C}
+The Asynchronous Advantage Actor-Critic (A3C), introduced by Mnih et al. \cite{mnihAsynchronousMethodsDeep2016}, has become a go-to algorithm in 
+Deep Reinforcement Learning due to its performance, robustness, and ability to perform well on high-dimensional action- and state-spaces. 
+A key characteristic of A3C is the utilization of multiple agents, each equipped with its own environment instance and its own set of network parameters. 
+The diversification of the collected experience achieved by this is one of the assets accomplished but yields the challenge of handling gradient update 
+mismatches between the asynchronously collected network parameter updates. 
+In our implementation of A3C we adapted several alterations as opposed to the original version by Mnih et al.. Despite being an on-policy method, we decided 
+to include a numerically efficient N-step return 
+
 \subsection{PPO}
 \subsection{Reward function}
 The design of the reward function turned out to be a much more difficult procedure as expected initially. The already provided rewards in gym's CarRacing environment were rather simple and still led to a good result in the end. For CARLA however, it was necessary to invest more time into the engineering and designing of a suitable inducement system, because the driving behavior depended on more factors and the performance metric was not just driving as fast as possible. In the following, the process of arriving at our final reward function will be described. \newline 
@@ -254,34 +262,40 @@ Again, we chose a 13-class, 1-channel grayscale image with a slightly increased 
 camera. 
 \paragraph{Latent space generated from ground truth segmented images}
 In this section we will further discuss a modified version of the integrated encoder-decoder network that is based on 
-dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. In its original architecture, the network comprises 
+dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. 
+The underlying idea of this model is to 
+guide feature extraction towards more useful, problem-specific features by exposing the model to the additional 
+target of reconstructing a bird's eye view from the vehicle-based camera images.
+In its original architecture, the network comprises 
 5 input tensors and 7 output tensors with the inputs representing images of a front-, rear-, left-, right, and top-view camera. The 
 model is built with the Keras functional API and generally serves two purposes. On the one hand, each input tensor is encoded into 
 a 64-sized feature vector and decoded into it's original shape with a cross entropy loss with regard to the original input. This is 
 achieved with separate branches of autoencoders with 3 convolutions respectively. On the other 
 hand, a separate generative branch creates a bird's eye view reconstruction based on the concatenated feature vectors of the 
 vehicle-based cameras. In addition to the cross entropy loss at the reconstructed bird's eye view output, a mean square error 
-loss is calculated against the output of a subtract layer between the autoencoder- und reconstructed feature vector to support
-convergence.
+loss is calculated against the output of a subtract layer between the autoencoder's feature vector und the reconstructed feature vector to support
+convergence. Notably, the autoencoder branch of the top-down camera view is solely purposed for improving the latent space of the generative branch 
+during training and is thus not required for inference. 
 \newline In comparison to dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} vanilla version, we 
 adjusted the architecture to fit the single camera bottlenecks into a length 64 vector and the reconstructed bird's eye view
 bottleneck into a length 128 vector. To reduce complexity, we condensed both input and target segmentation images to 3 classes 
 and implemented a generalized weighted cross entropy\cite{zhangGeneralizedCrossEntropy2018} loss function to 
 account for the unbalanced distribution of vehicles and obstacles.
-\paragraph{Latent space generated from rgb images} To deal with the higher input complexity in RGB-images, we extended the
-encoder and decoder models to 5 convolutions.
-
 \begin{figure}[thpb]
    \centering
    \framebox{\parbox{3in}{
    \includegraphics[scale=.335]{rgb_birdseye.png}
    }}
    \caption{left: rgb images from 4 vehicle-based cameras
-            2nd from right: ground truth segmented bird's eye view
-            right: reconstructed bird's eye view}
+            \newline 2nd from right: ground truth segmented bird's eye view
+            \newline right: reconstructed bird's eye view}
        \label{figurelabel}
        \end{figure}
 
+\paragraph{Latent space generated from rgb images} To deal with the higher input complexity in RGB-images, we extended the
+encoder and decoder models to 5 convolutions. Despite the weighted categorical cross entropy loss, the network struggled with
+reconstructing pixels of the \textit{vehicle and obstacles} class. 
+       
 \subsection{Autoencoder/Latent space}
 TODO: Encoder-decoder architecture bzw. Generator nennen
 \subsection{Training}
@@ -298,7 +312,10 @@ TODO: Training beschreiben analog zur präsentation (vgl folien)
 \subsection{Comparison algorithms/reward functions}
 
 \section{Conclusions}
-
+--- mo 
+Aside from improving training data and network parameters, we 
+consider a more sophisticated encoding model as crucial for better results. 
+--- mo
 \begin{itemize}
       \item Similar to the abstract but more detail
       \item Conclusion of the key points of each section

@@ -258,9 +258,30 @@ dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. I
 5 input tensors and 7 output tensors with the inputs representing images of a front-, rear-, left-, right, and top-view camera. The 
 model is built with the Keras functional API and generally serves two purposes. On the one hand, each input tensor is encoded into 
 a 64-sized feature vector and decoded into it's original shape with a cross entropy loss with regard to the original input. This is 
-achieved with separate branches of 3-5 layered Convolutional Networks which can be considered autoencoders of their own. On the other 
+achieved with separate branches of autoencoders with 3 convolutions respectively. On the other 
 hand, a separate generative branch creates a bird's eye view reconstruction based on the concatenated feature vectors of the 
-vehicle-based cameras. 
+vehicle-based cameras. In addition to the cross entropy loss at the reconstructed bird's eye view output, a mean square error 
+loss is calculated against the output of a subtract layer between the autoencoder- und reconstructed feature vector to support
+convergence.
+\newline In comparison to dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} vanilla version, we 
+adjusted the architecture to fit the single camera bottlenecks into a length 64 vector and the reconstructed bird's eye view
+bottleneck into a length 128 vector. To reduce complexity, we condensed both input and target segmentation images to 3 classes 
+and implemented a generalized weighted cross entropy\cite{zhangGeneralizedCrossEntropy2018} loss function to 
+account for the unbalanced distribution of vehicles and obstacles.
+\paragraph{Latent space generated from rgb images} To deal with the higher input complexity in RGB-images, we extended the
+encoder and decoder models to 5 convolutions.
+
+\begin{figure}[thpb]
+   \centering
+   \framebox{\parbox{3in}{
+   \includegraphics[scale=.335]{rgb_birdseye.png}
+   }}
+   \caption{left: rgb images from 4 vehicle-based cameras
+            2nd from right: ground truth segmented bird's eye view
+            right: reconstructed bird's eye view}
+       \label{figurelabel}
+       \end{figure}
+
 \subsection{Autoencoder/Latent space}
 TODO: Encoder-decoder architecture bzw. Generator nennen
 \subsection{Training}

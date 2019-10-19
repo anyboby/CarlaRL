@@ -115,15 +115,39 @@ In this paper, several state-of-the-art reinforcement learning algorithms are im
 
 \section{Related Work}
 
-%“Human-level control through deep reinforcement learning” (2015)
-%“CARLA: An Open Urban Driving Simulator”
+%1. Reinforcement learning tasks have been tackled successfully in the past
+%	- discrete control tasks
+%	- human performance could be "overcome"
+%2. Continuous control is quite a new field
+%	- Need different algorithms
+%	- Adjustments and new developments have been made
+%3. DDPG
+%4. A3C
+%5. PPO
+%6. Autoencoder/DDPG
+%7. Birds eye view
+%8. CarRacing/TORCS
+%9. We extend this to CARLA
+%	- Has been done with imitation learning achieving good results
+Various reinforcement learning tasks have been tackled successfully in the past, leading to notable advances in learning policies for simulated and real-world robotic control problems (Levine and Koltun, de Bruin et al.) or solving complex game structures (9). The resulting deep reinforcement learning methods have recently been developed so far as to achieving similar results or beating human experts in some of these tasks (2)(8). In their paper, Silver et al. (2) introduce a new approach of teaching an agent the game of GO by combining Monte Carlo simulation with value and policy networks to evaluate board positions and choose new moves. In autonomous driving, Wolf et al. have achieved notable results using a Deep Q Network to evaluate possible steering actions from an action space of five predetermined steering options (10). 
+
+However, many tasks that could be solved with reinforcement learning approaches have continuous action spaces, to which approaches such as the DQN cannot be directly applied in a feasible manner (4). Therefore, algorithms that can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. present asynchronous variations of standard reinforcement learning algorithms and report the Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, including a physics control task with continuous action space in the MuJoCo Physics Simulator (6). Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), which they also evaluate in simulated physical environments, receiving near perfect results (3).
+
+DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance (1), suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks.
+
+%â€œHuman-level control through deep reinforcement learningâ€ (2015)
+%â€œCARLA: An Open Urban Driving Simulatorâ€
 %Our contribution to the field
 
 \section{Background}
 
 We regard the typical reinforcement learning setting where an agent interacts with an environment $\mathcal{E}$. At each one of a number of discrete timesteps $t$ the agent decides on taking an action $a_t$ from a given set of actions $\mathcal{A}$. This is done based on the state $s_t$ that the agent is currently in and following a policy $\pi$, which is a mapping of the possible states to the action space $\pi: \mathcal{S} \rightarrow \mathcal{P}(\mathcal{A})$. In this case, $\pi$ is stochastic, as it returns the probability distribution over the possible actions, and the action space is continuous.
 
-As a result, the agent receives a reward $r_t$ and the subsequent state $s_{t+1}$ of his environment. The setup is assumed to follow the properties of a Markov decision process, where besides state space $\mathcal{S}$, action space $\mathcal{A}$ and reward function $r(s_t,a_t)$, we also include the transition function to the future states $p(s_{t+1}|s_t,a_t)$.
+As a result, the agent receives a reward $r_t$ and the subsequent state $s_{t+1}$ of his environment. The setup is assumed to follow the properties of a Markov decision process, where besides state space $\mathcal{S}$, action space $\mathcal{A}$ and reward function $r(s_t,a_t)$, we also include the transition function to the future states $p(s_{t+1}|s_t,a_t)$. The objective of the agent is to maximize his expected return $R_t$, which is the cumulative reward of the current state $s_t$ and the rewards of future states, discounted with a factor $\gamma \in [0,1]$.
+
+In actor-critic methods the critic calculates the action value $Q^\pi(s,a) = E[R_t|s_t=s,a]$ describing the expected cumulative return for taking action a in state s under the given policy $\pi$, thus evaluating the selected action. The actor on the other hand estimates an optimal policy, following $\pi(s) = argmax_aQ(s,a)$. Similar to the action value, $V^\pi(s) = E[R_t|s_t=s]$ defines the value of state $s$ under the policy $\pi$ and simply describes the expected return for pursuing a policy $\pi$ from state $s$.
+
+In our project, we consider a continuous control task in the context of autonomous driving where three different actions can be selected: steering in a range of [-1,1], throttle  and acceleration in a range of [0,1] respectively.
 
 \section{Concept/Methods and Models}
 

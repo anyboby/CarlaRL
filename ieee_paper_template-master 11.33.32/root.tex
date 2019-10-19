@@ -150,10 +150,20 @@ Noise with Ornstein-Uhlenbeck
 The Asynchronous Advantage Actor-Critic (A3C), introduced by Mnih et al. \cite{mnihAsynchronousMethodsDeep2016}, has become a go-to algorithm in 
 Deep Reinforcement Learning due to its performance, robustness, and ability to perform well on high-dimensional action- and state-spaces. 
 A key characteristic of A3C is the utilization of multiple agents, each equipped with its own environment instance and its own set of network parameters. 
-The diversification of the collected experience achieved by this is one of the assets accomplished but yields the challenge of handling gradient update 
+One of the advantages of this approach is the diversification of the collected experience but yields the challenge of handling gradient update 
 mismatches between the asynchronously collected network parameter updates. 
 In our implementation of A3C we adapted several alterations as opposed to the original version by Mnih et al.. Despite being an on-policy method, we decided 
-to include a numerically efficient N-step return 
+to include a numerically efficient n-step return as proposed by jaromiru \cite{janischLetMakeA3C}. % (eq. x). 
+% \begin{equation}
+%    R_{0} = r_{0} + \gamma r_1 + \gamma^2 r_2 + ... + \gamma^{n-1} r_{n-1}
+%    R_{1} = r_{1} + \gamma r_2 + \gamma^2 r_3 + ... + \gamma^{n-1} r_{n}
+% \end{equation}
+% With R denoting the discounted Return at each timestep, $\gamma$ the discount factor, and r the reward at each timestep. Rather than calculating 
+
+Furthermore, experiences are buffered in a global update 
+queue and updates are only performed by a master network. This feature helps decorrelating experiences, emphasizes exploration and allows for more gpu-friendly
+batch-learning. However, one has to keep in mind that this contradicts the original update rule by mnih et al. and might lead to policy lag. A proper update 
+frequency in the master network is therefore of major importance.
 
 \subsection{PPO}
 \subsection{Reward function}
@@ -293,8 +303,7 @@ account for the unbalanced distribution of vehicles and obstacles.
        \end{figure}
 
 \paragraph{Latent space generated from rgb images} To deal with the higher input complexity in RGB-images, we extended the
-encoder and decoder models to 5 convolutions. Despite the weighted categorical cross entropy loss, the network struggled with
-reconstructing pixels of the \textit{vehicle and obstacles} class. 
+encoder and decoder models to 5 convolutions.
        
 \subsection{Autoencoder/Latent space}
 TODO: Encoder-decoder architecture bzw. Generator nennen
@@ -313,6 +322,8 @@ TODO: Training beschreiben analog zur präsentation (vgl folien)
 
 \section{Conclusions}
 --- mo 
+Despite the weighted categorical cross entropy loss, the network struggled with
+reconstructing pixels of the \textit{vehicle and obstacles} class. 
 Aside from improving training data and network parameters, we 
 consider a more sophisticated encoding model as crucial for better results. 
 --- mo

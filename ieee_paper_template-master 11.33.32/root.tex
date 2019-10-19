@@ -150,69 +150,59 @@ Noise with Ornstein-Uhlenbeck
 \subsection{PPO}
 \subsection{Reward function}
 The design of the reward function turned out to be a much more difficult procedure as expected initially. The already provided rewards in gym's CarRacing environment were rather simple and still led to a good result in the end. For CARLA however, it was necessary to invest more time into the engineering and designing of a suitable inducement system, because the driving behavior depended on more factors and the performance metric was not just driving as fast as possible. In the following, the process of arriving at our final reward function will be described. \newline 
-In the first step, we investigated possible sensor inputs that might have an impact on the driving behavior and discussed on their impact. The outcome is summarized in the following table:
+In the first step, we investigated possible sensor inputs that might have an impact on the driving behavior and discussed on their impact. Table 1 summarizes the outcome.
 \newline 
 
-\begin{table}
-\footnotesize
-\centering
-\caption{Moritz' krankes table}%
-\label{tab:Example}%
-\begin{tabularx}{\linewidth}{lcX}%
-\toprule
-\textbf{Component} & \textbf{Intention} & \textbf{Weight} \\
-\midrule
-\makecell[Xt]{Per frame penalty}          & \makecell[Xt]{Forces agent to move}  &\makecell[lt]{-0.1} \\
-\makecell[Xt]{Lane invasion counter}          & \makecell[Xt]{As few lane changes as possible}  &\makecell[lt]{-0.1} \\
-\makecell[Xt]{Steering angle}          & \makecell[Xt]{Avoids oszillations}  &\makecell[lt]{-0.1} \\
-\makecell[Xt]{Delta heading}          & \makecell[Xt]{Drive as straight as possible relative to road}  &\makecell[lt]{-0.1} \\
-\bottomrule
-\end{tabularx}
+
+\begin{table}[!h]
+	\footnotesize
+	\centering
+	\caption{Identified reward function components}%
+	\label{tab:Example}%
+	\begin{tabularx}{\linewidth}{lcX}
+		\toprule
+		\textbf{Component} & \textbf{Description} & \textbf{Intention}\\
+		\midrule
+		\makecell[Xt]{Per frame penalty}  & \makecell[Xt]{The penalty amount subtracted from the reward for each frame}   & \makecell[Xt]{Forces agent to move in order to compensate the penalties}  \\
+		\makecell[Xt]{Lane invasion increment}   & \makecell[Xt]{Is either 0 or 1 and reflects if a lane invasion took place for the current frame.} & \makecell[Xt]{The agent should perform as few lane changes as possible} \\
+		\makecell[Xt]{Steering angle}   & \makecell[Xt]{The absolute angle of the steering wheel}       & \makecell[Xt]{Avoids oszillations in the driving behavior}   \\
+		\makecell[Xt]{Delta heading}     & \makecell[Xt]{The angle between current street direction and car position}      & \makecell[Xt]{Agent should drive as straight as possible relatively to road direction} \\
+		\makecell[Xt]{Position change}     & \makecell[Xt]{The angle between current street direction and car position}      & \makecell[Xt]{Maximize travelled distance} \\
+		\makecell[Xt]{Collision binary per frame}     & \makecell[Xt]{Penalty for crashing into other vehicles, objects or road infrastructure}      & \makecell[Xt]{Avoid crashes and improve security of driving} \\
+		\makecell[Xt]{Velocity}     & \makecell[Xt]{The agent's absolute speed retrieved from the CARLA engine}      & \makecell[Xt]{Forces the agent to move forward} \\
+		\makecell[Xt]{Distance to middle lane}     & \makecell[Xt]{The absolute distance to center in meters - can also be squared to improve}      & \makecell[Xt]{Drive as centered as possible} \\
+		\bottomrule
+	\end{tabularx}
 \end{table}
-   
-   
 
 
-
-TODO: Schön formatieren
-\begin{tabular}{ | l | l | l | p{5cm} |}
-\hline
-
-\hline
-
-\hline
-Per frame penalty & Forces agent to move \\
-\hline
-Lane invasion counter & As few lane changes as possible \\
-\hline
-Steering angle change & Avoids oszillations \\
-\hline
-Delta heading  & Drive as straight as possible relative to road \\
-\hline
-Position change & Maximize travelled distance \\
-\hline
-Collision binary per frame & Avoid crashes  \\
-\hline
-Velocity & Drive fast under the other constraints\\
-\hline
-Distance to middle lane & Drive as centered as possible\\
-\hline
-\end{tabular}
-\newline
 
 We started with incrementally adding these attributes to our reward calculation and quickly realized, that the main challenge is to adjust the weights and harmonize the contrary effects of the terms.
 An example would be, that giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays few attention on lane invasions. On the opposite side, the agent will drive only very slowly or even not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but rather several possible components, this results in a complex combinatorical problem that can either be solved by trail and error or applying permutation optimization techniques. To achieve initial results, we started to discover a proper reward function "by hand". 
 \newline
-We pruned the above list by applying the following considerations that resulted from tesing different approaches. Firstly, some components show a redundant behavior and hence one of them can be removed. An example would be the velocity and the position change - both contain the same information. Further, the attributes lane invasion and steering angle didnn't affect the driving behavior in a positive way. The two most important parameters turned out be the velocity and the delta heading, which expressed the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in the following table:
+We pruned the above list by applying the following considerations that resulted from tesing different approaches. Firstly, some components show a redundant behavior and hence one of them can be removed. An example would be the velocity and the position change - both contain the same information. Further, the attributes lane invasion and steering angle didnn't affect the driving behavior in a positive way. The two most important parameters turned out be the velocity and the delta heading, which expressed the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in table 2.
 \newline
-TODO: Werte aus Präsentation übernehmen
-\begin{tabular}{ | l | l | l | p{5cm} |}
-	\hline
-	hier & drei & spalten
-\end{tabular}
-\newline
+We want to note here, that a performance-wise comparison between the different parameter combination is hard to measure with a metric and is not the aim of this project. However, it would make sense to develop a suitable approach to categorize and assess the performance of different reward functions towards the desired outcome. 
 
-The result is very promising and can be summarized as follows: The agent is capable of driving smoothly within the right lane and can perform turn manuevers on most intersections. It attempts to drive around other vehicles, but is not capable of breaking. We trained different models on this reward function and all of them had a good performance compared to other functions.
+\begin{table}[!h]
+	\footnotesize
+	\centering
+	\caption{Final reward function terms and weights}%
+	\label{tab:Example}%
+	\begin{tabularx}{\linewidth}{lcX}%
+		\toprule
+		\textbf{Component} & \textbf{Effect} & \textbf{Weight} \\
+		\midrule
+		\makecell[Xt]{Per frame penalty}   & \makecell[Xt]{Lead to a strong initial learning behavior. Already after few steps the agent kept accelerating to compensate this penalty.}  &\makecell[lt]{-0.01} \\
+		\makecell[Xt]{Velocity}          & \makecell[Xt]{When selected too small, slow learning and when too high, strong lane oscillations / non-smooth driving.}  &\makecell[lt]{+0.05} \\
+		\makecell[Xt]{Delta heading}          & \makecell[Xt]{Introducing this term improved the driving stability enormously.}  &\makecell[lt]{-0.005} \\
+		\makecell[Xt]{Squared distance to middle lane}  & \makecell[Xt]{Squaring had very beneficial effects, other powers were to restrictive.}  &\makecell[lt]{-0.01} \\
+		\makecell[Xt]{Collision binary}  & \makecell[Xt]{Might be set to an even higher value but lead to attempts to avoid other objects }  &\makecell[lt]{-100} \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+The result (in combination with tuning the reinforcement learning models) is very promising and can be summarized as follows: The agent is capable of driving smoothly within the right lane and can perform turn manuevers on most intersections. It attempts to drive around other vehicles, but is not capable of breaking. We trained different models on this reward function and all of them had a good performance compared to other incentive attempts. We assume, that event better results can be achieved when applying an improved optimization method to find out the best parameter-combination. However, this is a combinatorical problem and requires several simulation runs. 
 
 
 \subsection{Input representation}

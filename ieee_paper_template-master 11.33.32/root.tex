@@ -168,8 +168,7 @@ frequency in the master network is therefore of major importance.
 \subsection{PPO}
 \subsection{Reward function}
 The design of the reward function turned out to be a much more difficult procedure as expected initially. The already provided rewards in gym's CarRacing environment were rather simple and still led to a good result in the end. For CARLA however, it was necessary to invest more time into the engineering and designing of a suitable inducement system, because the driving behavior depended on more factors and the performance metric was not just driving as fast as possible. In the following, the process of arriving at our final reward function will be described. \newline 
-In the first step, we investigated possible sensor inputs that might have an impact on the driving behavior and discussed on their impact. Table 1 summarizes the outcome.
-\newline 
+In the first step, we investigated possible sensor and measurement inputs that might have an impact on the driving behavior and discussed on their impact. As summarized in Table 1, the outcome consists of eight possible features, that were tested in the following.
 
 
 \begin{table}[!h]
@@ -194,9 +193,8 @@ In the first step, we investigated possible sensor inputs that might have an imp
 \end{table}
 
 
-
-We started with incrementally adding these attributes to our reward calculation and quickly realized, that the main challenge is to adjust the weights and harmonize the contrary effects of the terms.
-An example would be, that giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays few attention on lane invasions. On the opposite side, the agent will drive only very slowly or even not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but rather several possible components, this results in a complex combinatorical problem that can either be solved by trail and error or applying permutation optimization techniques. To achieve initial results, we started to discover a proper reward function "by hand". 
+We started with incrementally adding these attributes to our reward calculation and quickly realized, that the main challenge is adjusting the weights and harmonizing the contrary effects of the terms.
+An example would be, that giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays only few attention on lane invasions. On the opposite side, the agent will drive very slowly or even not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but several possible components, it results in a complex combinatorical problem that can either be solved by trail and error or applying permutational optimization techniques. To achieve initial results, we started to discover a proper reward function "by hand". 
 \newline
 We pruned the above list by applying the following considerations that resulted from tesing different approaches. Firstly, some components show a redundant behavior and hence one of them can be removed. An example would be the velocity and the position change - both contain the same information. Further, the attributes lane invasion and steering angle didnn't affect the driving behavior in a positive way. The two most important parameters turned out be the velocity and the delta heading, which expressed the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in table 2.
 \newline
@@ -298,7 +296,51 @@ encoder and decoder models to 5 convolutions.
 \subsection{Autoencoder/Latent space}
 TODO: Encoder-decoder architecture bzw. Generator nennen
 \subsection{Training}
-TODO: Training beschreiben analog zur präsentation (vgl folien)
+In order to align the algorithms with the varying input dimensions we had to implement a wrapper around the actual models that adjusts the network architecture accordingly. Especially the fact that the latent space is flattened and not 2-dimensional such as the ground truth pictures made it neccessary to implement convolutional as well as  fully connected networks. Luckily, for the stable-baselines PPO model this is implemented very quickly. The architecture of our Keras-DDPG model however, had to be adjusted completely. 
+We performed the training in four process steps, aligned with the input representation types mentioned previously. Therefore, the initial training was carried out on the ground-truth front view, afterwards on the ground-truth bird's eye view and finally we trained on the latent space of rgb and ground-truth segmented images. 
+\subsubsection{DDPG}
+The Deep Deterministic Policy Gradient performed well on our initial attempts within gym CarRacing and we identified reasonable hyperparameters for proper learning. We applied the same model on the new input features of CARLA and came to the sobering result that the input seemed to be too complex for the model. We assume, that the learning algorithm was distracted by the advanced simulation environment. The following illustration emphasizes the poor behavior of the model (trained on circumstances where other models performed well). Hence, we decided to continue with different learning approaches and agreed due to recent developments on the PPO.
+\begin{figure}[thpb]
+	\centering
+	\framebox{\parbox{3in}{
+			\includegraphics[scale=.5]{ddpg.png}
+	}}
+	\caption{Keras DDPG learning behavior}
+	\label{figurelabel}
+\end{figure}
+
+\subsubsection{PPO}
+The stable-baselines PPO2 model is easy to train and only few hyperparameters need to be adjusted. The drawback of this approach is that customization of these pre-defined models is rather laborious. Especially a combination of diverse input types such as scalars and images requires arduos architecture adjustments. We changed the following parameters and arrived at a very fast and crisp learning behavior that enables the agent to start driving after already very few episodes.
+
+\begin{table}[!h]
+	\footnotesize
+	\centering
+	\caption{Final reward function terms and weights}%
+	\label{tab:Example}%
+	\begin{tabularx}{\linewidth}{lcX}%
+		\toprule
+		\textbf{Parameter} & \textbf{Default Value} & \textbf{Selected Value} \\
+		\midrule
+		\makecell[Xt]{Learning rate}   & \makecell[Xt]{0.00025}  &\makecell[lt]{0.0004} \\
+		\makecell[Xt]{Clip range}   & \makecell[Xt]{0.2}  &\makecell[lt]{0.1} \\
+		\makecell[Xt]{Gamma}   & \makecell[Xt]{0.99}  &\makecell[lt]{0.97} \\
+		\makecell[Xt]{N\_steps}   & \makecell[Xt]{128}  &\makecell[lt]{1024} \\
+		\makecell[Xt]{Environment steps}   & \makecell[Xt]{25k}  &\makecell[lt]{200k} \\
+	\end{tabularx}
+\end{table}
+
+The learning behavior usually increased until 200k steps and started to stagnate afterwards. The achieved episode rewards and entropy loss over several runs was very stable and performance drops occured rarely. The results on the proved input representations were very different: We trained the PPO with the same reward function, the same amount of steps at the same environment spawn point and hence assumed equal conditions. The front-cam-view resulted in a very oscilating driving behavior and the rewards were damped by the penalties for inaccurate delta heading. The birds-eye-view on the other hand had a very smooth driving behavior and deliverd the best performance in our test. This comes from the improved view on the street trajectory from above. Considering the easier and smaller latent space representation we realized that the algorithm trains very fast but can't reproduce the performance of the ground-truth. We assume that the architecture didn't contain the complete information in the layers that were extracted in our experiment and hence the latent space should usually arrive at a similar outcome as the ground-truth birds-eye-view.
+
+
+\begin{figure}[thpb]
+	\centering
+	\framebox{\parbox{3in}{
+			\includegraphics[scale=.23]{comparison_rewards.png}
+	}}
+	\caption{Green line: Performance on front-cam-view, Blue line: Performance on birds-eye-view, Red line: Performance on latent space}
+	\label{figurelabel}
+\end{figure}
+
 
 %\subsection{CARLA}
 

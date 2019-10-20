@@ -26,6 +26,12 @@
 \usepackage{graphicx}
 \graphicspath{{./03_graphics/}}
 
+%checkmark
+\usepackage{tikz}
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\def\checkmark{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;} 
+\newcommand{\xmark}{\ding{53}}%
+
 % possible subfigure packages
 %\usepackage{subfigure}
 %\usepackage[caption=false,font=footnotesize]{subfig}
@@ -309,15 +315,29 @@ account for the unbalanced distribution of vehicles and obstacles.
        \end{figure}
 
 \paragraph{Latent space generated from rgb images} To deal with the higher input complexity in RGB-images, we extended the
-encoder and decoder models to 5 convolutions.
+encoder and decoder models to 5 convolutions. Training data was collected both manually and by autopilot to retrieve a better 
+balance in driving styles, speed and locations. During training, the maximum of 308 Vehicles were spawned in the environment to 
+increase vehicle-class occurrence in the data. 
        
-\subsection{Autoencoder/Latent space}
-TODO: Encoder-decoder architecture bzw. Generator nennen
 \subsection{Training}
-In order to align the algorithms with the varying input dimensions we had to implement a wrapper around the actual models that adjusts the network architecture accordingly. Especially the fact that the latent space is flattened and not 2-dimensional such as the ground truth pictures made it neccessary to implement convolutional as well as  fully connected networks. Luckily, for the stable-baselines PPO model this is implemented very quickly. The architecture of our Keras-DDPG model however, had to be adjusted completely. 
-We performed the training in four process steps, aligned with the input representation types mentioned previously. Therefore, the initial training was carried out on the ground-truth front view, afterwards on the ground-truth bird's eye view and finally we trained on the latent space of rgb and ground-truth segmented images. 
+In order to align the algorithms with the varying input dimensions we had to implement a wrapper 
+around the actual models that adjusts the network architecture accordingly. Especially the fact that 
+the latent space is flattened and not 2-dimensional such as the ground truth pictures made it 
+neccessary to implement convolutional as well as  fully connected networks. 
+Luckily, for the stable-baselines PPO model this is implemented very quickly. 
+The architecture of our Keras-DDPG model however, had to be adjusted completely. 
+We performed the training in four process steps, aligned with the input representation 
+types mentioned previously. Therefore, the initial training was carried out on the ground-truth 
+front view, afterwards on the ground-truth bird's eye view and finally we trained on the latent 
+space of rgb and ground-truth segmented images. 
 \subsubsection{DDPG}
-The Deep Deterministic Policy Gradient performed well on our initial attempts within gym CarRacing and we identified reasonable hyperparameters for proper learning. We applied the same model on the new input features of CARLA and came to the sobering result that the input seemed to be too complex for the model. We assume, that the learning algorithm was distracted by the advanced simulation environment. The following illustration emphasizes the poor behavior of the model (trained on circumstances where other models performed well). Hence, we decided to continue with different learning approaches and agreed due to recent developments on the PPO.
+The Deep Deterministic Policy Gradient performed well on our initial attempts within gym CarRacing 
+and we identified reasonable hyperparameters for proper learning. We applied the same model 
+on the new input features of CARLA and came to the sobering result that the input seemed to be 
+too complex for the model. We assume, that the learning algorithm was distracted by the advanced 
+simulation environment. The following illustration emphasizes the poor behavior of the model 
+(trained on circumstances where other models performed well). Hence, we decided to continue with 
+different learning approaches and agreed due to recent developments on the PPO.
 \begin{figure}[thpb]
 	\centering
 	\framebox{\parbox{3in}{
@@ -328,7 +348,11 @@ The Deep Deterministic Policy Gradient performed well on our initial attempts wi
 \end{figure}
 
 \subsubsection{PPO}
-The stable-baselines PPO2 model is easy to train and only few hyperparameters need to be adjusted. The drawback of this approach is that customization of these pre-defined models is rather laborious. Especially a combination of diverse input types such as scalars and images requires arduos architecture adjustments. We changed the following parameters and arrived at a very fast and crisp learning behavior that enables the agent to start driving after already very few episodes.
+The stable-baselines PPO2 model is easy to train and only few hyperparameters need 
+to be adjusted. The drawback of this approach is that customization of these pre-defined 
+models is rather laborious. Especially a combination of diverse input types such as scalars and 
+images requires arduos architecture adjustments. We changed the following parameters and arrived 
+at a very fast and crisp learning behavior that enables the agent to start driving after already very few episodes.
 
 \begin{table}[!h]
 	\footnotesize
@@ -347,7 +371,16 @@ The stable-baselines PPO2 model is easy to train and only few hyperparameters ne
 	\end{tabularx}
 \end{table}
 
-The learning behavior usually increased until 200k steps and started to stagnate afterwards. The achieved episode rewards and entropy loss over several runs was very stable and performance drops occured rarely. The results on the proved input representations were very different: We trained the PPO with the same reward function, the same amount of steps at the same environment spawn point and hence assumed equal conditions. The front-cam-view resulted in a very oscilating driving behavior and the rewards were damped by the penalties for inaccurate delta heading. The birds-eye-view on the other hand had a very smooth driving behavior and deliverd the best performance in our test. This comes from the improved view on the street trajectory from above. Considering the easier and smaller latent space representation we realized that the algorithm trains very fast but can't reproduce the performance of the ground-truth. We assume that the architecture didn't contain the complete information in the layers that were extracted in our experiment and hence the latent space should usually arrive at a similar outcome as the ground-truth birds-eye-view.
+The learning behavior usually increased until 200k steps and started to stagnate afterwards. 
+The achieved episode rewards and entropy loss over several runs was very stable and performance 
+drops occured rarely. The results on the proved input representations were very different: We trained 
+the PPO with the same reward function, the same amount of steps at the same environment 
+spawn point and hence assumed equal conditions. The front-cam-view resulted in a very 
+oscilating driving behavior and the rewards were damped by the penalties for inaccurate delta heading. 
+The birds-eye-view on the other hand had a very smooth driving behavior and deliverd the best performance in our test. 
+This comes from the improved view on the street trajectory from above. 
+Due to training capacity, we decided to restrict training to the feature vector of the RGB encoded model. Considering the easier and smaller latent 
+space representation we realized that the algorithm trains very fast but can't reproduce the performance of the ground-truth. 
 
 
 \begin{figure}[thpb]
@@ -355,27 +388,92 @@ The learning behavior usually increased until 200k steps and started to stagnate
 	\framebox{\parbox{3in}{
 			\includegraphics[scale=.23]{comparison_rewards.png}
 	}}
-	\caption{Green line: Performance on front-cam-view, Blue line: Performance on birds-eye-view, Red line: Performance on latent space}
+	\caption{Green line: Performance on front-cam-view, Blue line: Performance on birds-eye-view, Red line: Performance on latent space of RGB model}
 	\label{figurelabel}
 \end{figure}
 
 
 %\subsection{CARLA}
 
-\section{Evaluation}
+\section{Results}
 \subsection{CarRacing-v0}
-Due to the simple input structure and the straight-forward reward system we achieved stable results, even with using not the most-advanced learning algorithms (We consider the PPO as an improvement over the DDPG). Also the A3C could generate promising results (average rewards around 700) with only few training time.  In total, these results can be explained by the simplicity of the environment. However, here we invested more time on the finetuning of the hyperparameters compared with CARLA.
+Due to the simple input structure and the straight-forward reward system we achieved stable results, 
+even with using not the most-advanced learning algorithms (We consider the PPO as an improvement over the DDPG). 
+Also the A3C could generate promising results (average rewards around 700) with only few training time.  
+In total, these results can be explained by the simplicity of the environment. However, here we invested more time on 
+the finetuning of the hyperparameters compared with CARLA.
 \subsection{CARLA}
-The CARLA simulation environment is far more complex than the previous environment we worked with. Additionally, it was neccessary to implement the observations, terminal conditions as well as the reward function, where a lot of time was invested. The application of the stable-baselines algorithms is rather straight-forward. Hence, the challenging part here was merely the environment itself. 
-\subsection{Results}
-%TODO: Mit Concept vergleichen und formulieren welche Ziele erreicht wurden / wo es probleme gab (analog zur präsi)
-While we were able to successfully implement the DDPG and A3C algorithms in the CarRacing-v0 environment, we achieved the best results in CARLA with the PPO. The defined reward functions managed to teach our agent how to follow his lane with input states in ground truth bird's eye view representation. The agent actively tried to avoid crashes in some cases, however, we believe that further are adjustments to the reward function could improve the results in this area. Terminating after 2000 steps or after a crash improved the agent's behavior while terminating when the agent moved to far from the center line had a negative impact on training results. With the latent space bird's eye view representation the necessary number of training steps could be reduced. However, despite the weighted categorical cross entropy loss, the network struggled with reconstructing pixels of the \textit{vehicle and obstacles} class. Aside from improving training data and network parameters, we consider a more sophisticated encoding model as crucial for better results. 
+The CARLA simulation environment is far more complex than the previous environment we worked with. 
+Since the application of the stable-baselines algorithms is rather straight-forward, the main challenge comprised the design of proper input 
+representations and the optimization of terminal conditions, rewards and parameters.
 
-\subsection{Comparison algorithms/reward functions}
+\begin{table}[!h]
+	\footnotesize
+	\centering
+	\caption{Project Goal: Input State Representations}%
+	\label{tab:Example}%
+	\begin{tabularx}{\linewidth}{lcX}%
+		\toprule
+		\textbf{Difficulty Level} & \textbf{Goal} & \textbf{Accomplished} \\
+		\midrule
+		\makecell[Xt]{Level 1}   & \makecell[Xt]{Ground truth segmented bird's eye view}  &\makecell[lt]{\checkmark} \\
+		\makecell[Xt]{Level 2}   & \makecell[Xt]{Ground truth segmented front view}  &\makecell[lt]{\checkmark} \\
+		\makecell[Xt]{Level 3}   & \makecell[Xt]{Latent space generated from ground truth segmented images}  &\makecell[lt]{discontinued} \\
+		\makecell[Xt]{Level 4}   & \makecell[Xt]{Latent space generated from rgb images}  &\makecell[lt]{$-$} \\
+	\end{tabularx}
+\end{table}
+As can be seen in TABLE IV, we were not able to produce a high-performance agent using the latent space of the RGB-model, 
+despite its promising training speed. 
+We assume that the architecture didn't contain the complete information in the layers that were extracted in our
+ experiment and that this was the reason, a similar outcome as the ground-truth birds-eye-view was not possible. One 
+of the issues contributing to this, is the mismatch between the unconventional driving style of a learning agent and the 
+driving style of a human/autopilot, at which data for the encoder-decoder model was collected. 
+Despite using a weighted categorical cross entropy loss, the network struggled with reconstructing pixels
+of the \textit{vehicle and obstacles} class. Aside from improving training data and network parameters, we consider the usage of more
+sophisticated encoder-decoder models such as Deeplab-V3 for feature extraction as promising. Moreover, we believe feature extraction 
+models should rather be fine-tuned during the agent's training, than be used for inference only. This way, a trade-off between 
+problem-specific optimal feature extraction and data/time efficiency can be pursued.
+
+\begin{table}[!h]
+	\footnotesize
+	\centering
+	\caption{Project Goal: Driving}%
+	\label{tab:Example}%
+	\begin{tabularx}{\linewidth}{lcX}%
+		\toprule
+		\textbf{Difficulty Level} & \textbf{Goal} & \textbf{Accomplished} \\
+		\midrule
+		\makecell[Xt]{Stage 1}   & \makecell[Xt]{Driving}  &\makecell[lt]{\checkmark} \\
+		\makecell[Xt]{Stage 2}   & \makecell[Xt]{Lane Following}  &\makecell[lt]{\checkmark} \\
+		\makecell[Xt]{Stage 3}   & \makecell[Xt]{Driving with Traffic and Obstacles}  &\makecell[lt]{\xmark} \\
+	\end{tabularx}
+\end{table}
+
+TABLE V lists our overall project goals with respect to the driving behavior of our best-performing agent. 
+The defined reward functions managed to teach our agent how to follow his lane with input states in ground truth bird's eye view representation.
+The agent actively tried to avoid crashes in some cases, however, we believe that further are adjustments to the reward function could improve 
+the results in this area. Terminating after 2000 steps or after a crash improved the agent's behavior while terminating when the agent moved too far
+from the center line had a negative impact on training results.
+
 
 \section{Conclusions}
-As result of this practical seminar we have successfully applied different deep reinforcement approaches to the CARLA environment and finally achieved a stable and promising lane-keeping behavior for the agent. This was achieved by a combination of finding the most suitable input representation for smooth driving, finetuning of the rewardfunction and identification of the best performing hyperparameters. The outcome proves that reinforcement learning can be applied to complex environments as well as long as the desired behavior is incooperated in the reward system. Furthermore, we could prove that the birds-eye-view leads to a better performance as a single front camera and is also feasible in a real-world setup by generating the representation from four cameras surrounding the car. In the training process we recommend to not use early-termination for the episodes, especially if the reward function contains negative components, since this increases the probability that the agent starts to drive off the track as soon as possible. Finally, we emphasize that the driving behavior has the potential to be even further improved in the future by selecting better data, learning algorithms and an optimal reward function. We can also imagine, that the involvement of further attributes in the model such as the current velocity can be used to describe even more complex driving situations.  \newline
-For the future we additionally suggest a combination of the birds-eye-view with a front camera in order to enable the identification of traffic signs and traffic lights, which wouldn't be possible from above. Also, we assume that the improvement of the encoder-decoder architecture could boost the learning speed and overall performance.
+As result of this practical seminar we have successfully applied different deep reinforcement 
+approaches to the CARLA environment and finally achieved a stable and promising lane-keeping behavior 
+for the agent. This was achieved by a combination of finding the most suitable input representation for 
+smooth driving, finetuning of the rewardfunction and identification of the best performing hyperparameters. 
+The outcome proves that reinforcement learning can be applied to complex environments as well as long as the 
+desired behavior is incooperated in the reward system. Furthermore, we could prove that the birds-eye-view leads 
+to a better performance as a single front camera and is also feasible in a real-world setup by generating the 
+representation from four cameras surrounding the car. In the training process we recommend to not use early-termination 
+for the episodes, especially if the reward function contains negative components, since this increases the probability that 
+the agent starts to drive off the track as soon as possible. Finally, we emphasize that the driving behavior has the potential 
+to be even further improved in the future by selecting better data, learning algorithms and an optimal reward function. 
+We can also imagine, that the involvement of further attributes in the model such as the current velocity can be used 
+to describe even more complex driving situations.  \newline
+For the future we additionally suggest a combination of the birds-eye-view with a front camera 
+in order to enable the identification of traffic signs and traffic lights, which wouldn't be 
+possible from above. Also, we assume that the improvement of the encoder-decoder 
+architecture could boost the learning speed and overall performance.
 
 
 

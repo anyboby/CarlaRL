@@ -63,7 +63,7 @@ Deep Reinforcement Learning with Continuous Control in CARLA
 \author{Moritz Zanger$^{1}$ Florian Rottach$^{1}$ Izel Kilinc$^{1}$ % <-this % stops a space
 \thanks{$^{1}$The authors are with FZI Research Center for Information Technology, Haid-und-Neu-Str. 10-14, 76131 Karlsruhe, Germany
 %        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
-        {\tt\small \{uydrn, uzdnz\}@student.kit.edu}}%
+        {\tt\small \{uvday, uydrn, uzdnz\}@student.kit.edu}}%
 }        
         
 \begin{document}
@@ -379,14 +379,9 @@ Due to the simple input structure and the straight-forward reward system we achi
 \subsection{CARLA}
 The CARLA simulation environment is far more complex than the previous environment we worked with. Additionally, it was neccessary to implement the observations, terminal conditions as well as the reward function, where a lot of time was invested. The application of the stable-baselines algorithms is rather straight-forward. Hence, the challenging part here was merely the environment itself. 
 \subsection{Results}
-TODO: Mit Concept vergleichen und formulieren welche Ziele erreicht wurden / wo es probleme gab (analog zur präsi)
+%TODO: Mit Concept vergleichen und formulieren welche Ziele erreicht wurden / wo es probleme gab (analog zur präsi)
+While we were able to successfully implement the DDPG and A3C algorithms in the CarRacing-v0 environment, we achieved the best results in CARLA with the PPO. The defined reward functions managed to teach our agent how to follow his lane with input states in ground truth bird's eye view representation. The agent actively tried to avoid crashes in some cases, however, we believe that further are adjustments to the reward function could improve the results in this area. Terminating after 2000 steps or after a crash improved the agent's behavior while terminating when the agent moved to far from the center line had a negative impact on training results. With the latent space bird's eye view representation the necessary number of training steps could be reduced. However, despite the weighted categorical cross entropy loss, the network struggled with reconstructing pixels of the \textit{vehicle and obstacles} class. Aside from improving training data and network parameters, we consider a more sophisticated encoding model as crucial for better results. 
 
---- mo
-Despite the weighted categorical cross entropy loss, the network struggled with
-reconstructing pixels of the \textit{vehicle and obstacles} class. 
-Aside from improving training data and network parameters, we 
-consider a more sophisticated encoding model as crucial for better results. 
---- mo
 \subsection{Comparison algorithms/reward functions}
 
 \section{Conclusions}

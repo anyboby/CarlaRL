@@ -86,7 +86,13 @@ Deep Reinforcement Learning with Continuous Control in CARLA
 
 %This electronic document is a ÒliveÓ template. The various components of your paper [title, text, heads, etc.] are already defined on the style sheet, as illustrated by the portions given in this document.
 
-In the course of this project, three policy gradient reinforcement learning algorithms are implemented and evaluated using OpenAI Gym's CarRacing-v0 environment and the open-source urban driving simulator CARLA. To reduce sample complexity, four variants of input representations with differing dimensionalities are employed, of which the bird's eye view representation of ground truth segmented images delivers the best results. We are able to show that a top-down input representation is a feasible concept for a vehicle in a real-world scenario. As a result, we propose a reward function that enables stable lane-keeping behavior and smooth driving in CARLA.
+In the course of this project, three policy gradient reinforcement learning algorithms 
+are implemented and evaluated using OpenAI Gym's CarRacing-v0 environment and the open-source 
+urban driving simulator CARLA. To reduce sample complexity, four variants of input representations with 
+differing dimensionalities are employed, of which the bird's eye view representation of ground truth 
+segmented images delivers the best results. We can show that a top-down input representation is a feasible concept 
+for a vehicle in a real-world scenario. As a result, we propose a reward function that enables stable 
+lane-keeping behavior and smooth driving in CARLA.
 \end{abstract}
 
 
@@ -97,11 +103,37 @@ In the course of this project, three policy gradient reinforcement learning algo
 
 %Example Citation: \cite{Barth2008}.
 
-The task of teaching vehicles how to drive autonomously in urban scenarios is a challenging and complex one to solve. Not only is there the problem of finding the adequate response to a given situation but also the challenge of taking into account the surrounding factors that have an influence on the state that a vehicle is in and its possible actions. To date, most approaches focus on the manual design of behavioral policies, such as defining a driving policy through the use of annotated maps \cite{7339478}. While these solutions might work in situations which are documented by the provided mapping infrastructure, they are often difficult to generalize or scale, as they do not necessarily enable the comprehension of any given local scene. In order to make autonomous driving truly feasible in a real-world scenario it would be better to develop systems which are able to find their way without having to rely on an explicit set of rules. One possible solution to this task is provided by reinforcement learning methods. Here, the agent, i.e. the vehicle, actively searches for the optimal driving policy whilst trying to maximize a numerical reward signal. As opposed to imitation learning techniques, which have been popular in finding driving policies \cite{kendall2019learning}, reinforment learning algorithms enable a car to exceed human abilities, if applied correctly. In recent years, deep reinforcement learning methods have proven to be succesful in solving complex tasks such as playing GO \cite{44806} or Atari \cite{mnih2013playing} and there have been efforts in tackling various problems in the field of autonomous driving, including continous control tasks \cite{lillicrapContinuousControlDeep2015}.
+The task of teaching vehicles how to drive autonomously in urban scenarios is a 
+challenging and complex one to solve. Not only is there the problem of finding the adequate 
+response to a given situation but also the challenge of taking into account the surrounding 
+factors that have an influence on the state that a vehicle is in and its possible actions. 
+To date, most approaches focus on the manual design of behavioral policies, such as defining a 
+driving policy through the use of annotated maps \cite{7339478}. While these solutions might work in 
+situations that are documented by the provided mapping infrastructure, they are often difficult to 
+generalize or scale, as they do not necessarily enable the comprehension of any given local scene. 
+In order to make autonomous driving truly feasible in a real-world scenario, it would be better to 
+develop systems that can find their way without having to rely on an explicit set of rules. 
+Reinforcement Learning methods provide one possible solution to this task. Here, the agent, 
+i.e. the vehicle actively searches for the optimal driving policy while trying to maximize a 
+numerical reward signal. As opposed to imitation learning techniques, which have been popular 
+in finding driving policies \cite{kendall2019learning}, Reinforcement Learning algorithms enable 
+a car to exceed human abilities, if applied correctly. In recent years, deep reinforcement learning 
+methods have proven to be successful in solving complex tasks such as playing GO \cite{44806} or 
+Atari \cite{mnih2013playing}, and there have been efforts in tackling various problems in the field 
+of autonomous driving, including continuous control tasks \cite{lillicrapContinuousControlDeep2015}.
 
-However, two major drawbacks of reinforcement learning methods are their heavy depency on adequate input state representations \cite{DBLP:journals/corr/abs-1904-09503} and, as with other machine learning techniques, their need of a sufficient amount of accurate sample data to train on. In order to be able to train safely on an adequate amount of data, one approach is the use of data from other domains. For this purpose, the urban driving simulator CARLA has been developed, which is used as a simulation environment for this project.
+Two significant drawbacks of Reinforcement Learning methods are their heavy dependency on adequate 
+input state representations \cite{DBLP:journals/corr/abs-1904-09503} and their imminent need for 
+large amounts of data. In order to be able to 
+train safely on an adequate amount of data, one approach is the use of data from other domains. For this purpose, 
+the urban driving simulator CARLA has been developed, which is used as a simulation environment for this project.
 
-In previous projects, CARLA has been used to learn policies that allow agents to navigate through complex urban environments with imitation learning methods \cite{DBLP:journals/corr/abs-1710-02410}\cite{DBLP:journals/corr/abs-1903-00640}. In this paper, it serves as an environment to solve a continuous control task via deep reinforcement learning. Several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering driving tasks of increasing complexity. Additionally, reward functions for the respective problems are tested and different input represantations are designed and evaluated.
+In previous projects, CARLA has been used to learn policies that allow agents to navigate through complex urban 
+environments with imitation learning methods \cite{DBLP:journals/corr/abs-1710-02410}\cite{DBLP:journals/corr/abs-1903-00640}. 
+In this paper, it serves as an environment to solve a continuous control task via deep reinforcement learning. 
+Several Reinforcement Learning algorithms are implemented and compared with regard to their 
+performance, considering driving tasks of increasing complexity. Additionally, reward functions for the respective 
+problems are tested, and different input representations are designed and evaluated.
 
 %\subsection{Problem specification}
 %\subsection{Why RL? What is our goal/motivation?}
@@ -122,9 +154,27 @@ In previous projects, CARLA has been used to learn policies that allow agents to
 %8. CarRacing/TORCS
 %9. We extend this to CARLA
 %	- Has been done with imitation learning achieving good results
-Various reinforcement learning tasks have been tackled successfully in the past, leading to notable advances in learning policies for simulated and real-world robotic control problems \cite{Levine:2013:GPS:3042817.3042937}\cite{Bruin2015TheIO} or solving complex game structures \cite{Schaul2015PrioritizedER}. The resulting deep reinforcement learning methods have recently been developed so far as to achieving similar results or beating human experts in some of these tasks \cite{44806}\cite{mnih2015humanlevel}. In their paper, Silver et al. introduce a new approach of teaching an agent the game of GO by combining Monte Carlo simulation with value and policy networks to evaluate board positions and choose new moves. In autonomous driving, Wolf et al. have achieved notable results using a Deep Q Network to evaluate possible steering actions from an action space of five predetermined steering options \cite{7995727}. 
+Various reinforcement learning tasks have been tackled successfully in the past, 
+leading to notable advances in learning policies for simulated and real-world 
+robotic control problems \cite{Levine:2013:GPS:3042817.3042937}\cite{Bruin2015TheIO} 
+or solving complex game structures \cite{Schaul2015PrioritizedER}. The resulting Deep Reinforcement Learning
+ methods have recently been developed so far as to achieving similar results or beating human 
+ experts in some of these tasks \cite{44806}\cite{mnih2015humanlevel}. 
+Silver et al. introduce a new approach of teaching an 
+ agent the game of GO by combining Monte Carlo simulation with value 
+ and policy networks to evaluate board positions and choose new moves. In autonomous driving, 
+ Wolf et al. have achieved notable results using a Deep Q Network to evaluate possible steering 
+ actions from an action space of five predetermined steering options \cite{7995727}. 
 
-However, many tasks that could be solved with reinforcement learning approaches have continuous action spaces, to which approaches such as the DQN cannot be directly applied in a feasible manner \cite{lillicrapContinuousControlDeep2015}. Therefore, algorithms that can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. present asynchronous variations of standard reinforcement learning algorithms and report the Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, including a physics control task with continuous action space in the MuJoCo Physics Simulator \cite{mnihAsynchronousMethodsDeep2016}. Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), which they also evaluate in simulated physical environments, receiving near perfect results \cite{mnih2013playing}.
+However, many tasks that could be solved with reinforcement learning approaches have 
+continuous action spaces, to which approaches such as the DQN cannot be directly applied 
+in a feasible manner \cite{lillicrapContinuousControlDeep2015}. Therefore, algorithms that 
+can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. 
+present asynchronous variations of standard reinforcement learning algorithms and report the 
+Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, 
+including a physics control task with continuous action space in the MuJoCo Physics Simulator \cite{mnihAsynchronousMethodsDeep2016}. 
+Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), 
+which they evaluate in simulated physical environments \cite{mnih2013playing}.
 
 DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance \cite{kendall2019learning}, suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks. Another proposition to reduce the complexity of visual features that has been investigated in several projects is the representation of the input images as a top-down view on the vehicle \cite{DBLP:journals/corr/abs-1812-03079}\cite{DBLP:journals/corr/abs-1903-00640}\cite{Djuric2018ShorttermMP}.
 
@@ -475,17 +525,6 @@ in order to enable the identification of traffic signs and traffic lights, which
 possible from above. Also, we assume that the improvement of the encoder-decoder 
 architecture could boost the learning speed and overall performance.
 
-
-
-
-\begin{itemize}
-      \item Similar to the abstract but more detail
-      \item Conclusion of the key points of each section
-      \item Summary of main findings
-      \item Important conclusions that can be drawn
-      \item Discuss benefits and shortcomings of our approach
-      \item Suggest future areas of research
-   \end{itemize}
 
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths

@@ -86,7 +86,7 @@ Deep Reinforcement Learning with Continuous Control in CARLA
 
 %This electronic document is a ÒliveÓ template. The various components of your paper [title, text, heads, etc.] are already defined on the style sheet, as illustrated by the portions given in this document.
 
-\textbf{In the course of this project, three policy gradient reinforcement learning algorithms are implemented and evaluated using OpenAI Gym's CarRacing-v0 environment and the open-source urban driving simulator CARLA. To reduce sample complexity, four variants of input representations with differing dimensionalities are employed, of which the bird's eye view representation of ground truth segmented images delivers the best results. We are able to show that a top-down input representation is a feasible concept for a vehicle in a real-world scenario. As a result, we propose a reward function that enables stable lane-keeping behavior and smooth driving in CARLA.}
+In the course of this project, three policy gradient reinforcement learning algorithms are implemented and evaluated using OpenAI Gym's CarRacing-v0 environment and the open-source urban driving simulator CARLA. To reduce sample complexity, four variants of input representations with differing dimensionalities are employed, of which the bird's eye view representation of ground truth segmented images delivers the best results. We are able to show that a top-down input representation is a feasible concept for a vehicle in a real-world scenario. As a result, we propose a reward function that enables stable lane-keeping behavior and smooth driving in CARLA.
 \end{abstract}
 
 
@@ -97,11 +97,11 @@ Deep Reinforcement Learning with Continuous Control in CARLA
 
 %Example Citation: \cite{Barth2008}.
 
-The task of teaching vehicles how to drive autonomously in urban scenarios is a challenging and complex one to solve. Not only is there the problem of finding the adequate response to a given situation but also the challenge of taking into account the surrounding factors that have an influence on the state that a vehicle is in and its possible actions. To date, most approaches focus on the manual design of behavioral policies, such as defining a driving policy through the use of annotated maps \cite{7339478}. While these solutions might work in situations which are documented by the provided mapping infrastructure, they are often difficult to generalize or scale, as they do not necessarily enable the comprehension of any given local scene. In order to make autonomous driving truly feasible in a real-world scenario it would be better to develop systems which are able to find their way without having to rely on an explicit set of rules. One possible solution to this task is provided by reinforcement learning methods. Here, the agent, i.e. the vehicle, actively searches for the optimal driving policy whilst trying to maximize a numerical reward signal. As opposed to imitation learning techniques, which have been popular in finding driving policies \cite{kendall2019learning}, reinforment learning algorithms enable a car to exceed human abilities, if applied correctly. In recent years, deep reinforcement learning methods have proven to be succesful in solving complex tasks such as playing GO \cite{44806} or Atari \cite{mnih2013playing} and there have been efforts in tackling various problems in the field of autonomous driving, including continous control tasks \cite{journals/corr/LillicrapHPHETS15}.
+The task of teaching vehicles how to drive autonomously in urban scenarios is a challenging and complex one to solve. Not only is there the problem of finding the adequate response to a given situation but also the challenge of taking into account the surrounding factors that have an influence on the state that a vehicle is in and its possible actions. To date, most approaches focus on the manual design of behavioral policies, such as defining a driving policy through the use of annotated maps \cite{7339478}. While these solutions might work in situations which are documented by the provided mapping infrastructure, they are often difficult to generalize or scale, as they do not necessarily enable the comprehension of any given local scene. In order to make autonomous driving truly feasible in a real-world scenario it would be better to develop systems which are able to find their way without having to rely on an explicit set of rules. One possible solution to this task is provided by reinforcement learning methods. Here, the agent, i.e. the vehicle, actively searches for the optimal driving policy whilst trying to maximize a numerical reward signal. As opposed to imitation learning techniques, which have been popular in finding driving policies \cite{kendall2019learning}, reinforment learning algorithms enable a car to exceed human abilities, if applied correctly. In recent years, deep reinforcement learning methods have proven to be succesful in solving complex tasks such as playing GO \cite{44806} or Atari \cite{mnih2013playing} and there have been efforts in tackling various problems in the field of autonomous driving, including continous control tasks \cite{lillicrapContinuousControlDeep2015}.
 
 However, two major drawbacks of reinforcement learning methods are their heavy depency on adequate input state representations \cite{DBLP:journals/corr/abs-1904-09503} and, as with other machine learning techniques, their need of a sufficient amount of accurate sample data to train on. In order to be able to train safely on an adequate amount of data, one approach is the use of data from other domains. For this purpose, the urban driving simulator CARLA has been developed, which is used as a simulation environment for this project.
 
-In previous projects, CARLA has been used to learn policies that allow agents to navigate through complex urban environments via imitation learning methods \cite{DBLP:journals/corr/abs-1710-02410}\cite{DBLP:journals/corr/abs-1903-00640}. In this paper, it serves as an environment to solve a continuous control task vie deep reinforcement learning. Several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering driving tasks of increasing complexity. Additionally, reward functions for the respective problems are tested and different input represantations are designed and evaluated.
+In previous projects, CARLA has been used to learn policies that allow agents to navigate through complex urban environments with imitation learning methods \cite{DBLP:journals/corr/abs-1710-02410}\cite{DBLP:journals/corr/abs-1903-00640}. In this paper, it serves as an environment to solve a continuous control task via deep reinforcement learning. Several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering driving tasks of increasing complexity. Additionally, reward functions for the respective problems are tested and different input represantations are designed and evaluated.
 
 %\subsection{Problem specification}
 %\subsection{Why RL? What is our goal/motivation?}
@@ -124,9 +124,9 @@ In previous projects, CARLA has been used to learn policies that allow agents to
 %	- Has been done with imitation learning achieving good results
 Various reinforcement learning tasks have been tackled successfully in the past, leading to notable advances in learning policies for simulated and real-world robotic control problems \cite{Levine:2013:GPS:3042817.3042937}\cite{Bruin2015TheIO} or solving complex game structures \cite{Schaul2015PrioritizedER}. The resulting deep reinforcement learning methods have recently been developed so far as to achieving similar results or beating human experts in some of these tasks \cite{44806}\cite{mnih2015humanlevel}. In their paper, Silver et al. introduce a new approach of teaching an agent the game of GO by combining Monte Carlo simulation with value and policy networks to evaluate board positions and choose new moves. In autonomous driving, Wolf et al. have achieved notable results using a Deep Q Network to evaluate possible steering actions from an action space of five predetermined steering options \cite{7995727}. 
 
-However, many tasks that could be solved with reinforcement learning approaches have continuous action spaces, to which approaches such as the DQN cannot be directly applied in a feasible manner \cite{journals/corr/LillicrapHPHETS15}. Therefore, algorithms that can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. present asynchronous variations of standard reinforcement learning algorithms and report the Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, including a physics control task with continuous action space in the MuJoCo Physics Simulator \cite{mnihAsynchronousMethodsDeep2016}. Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), which they also evaluate in simulated physical environments, receiving near perfect results \cite{mnih2013playing}.
+However, many tasks that could be solved with reinforcement learning approaches have continuous action spaces, to which approaches such as the DQN cannot be directly applied in a feasible manner \cite{lillicrapContinuousControlDeep2015}. Therefore, algorithms that can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. present asynchronous variations of standard reinforcement learning algorithms and report the Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, including a physics control task with continuous action space in the MuJoCo Physics Simulator \cite{mnihAsynchronousMethodsDeep2016}. Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), which they also evaluate in simulated physical environments, receiving near perfect results \cite{mnih2013playing}.
 
-DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance \cite{kendall2019learning}, suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks. Another proposition to reduce the complexity of visual features that has investigated in several projects is the representation of the input images as a top-down view on the vehicle \cite{DBLP:journals/corr/abs-1812-03079}\cite{DBLP:journals/corr/abs-1903-00640}\cite{Djuric2018ShorttermMP}.
+DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance \cite{kendall2019learning}, suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks. Another proposition to reduce the complexity of visual features that has been investigated in several projects is the representation of the input images as a top-down view on the vehicle \cite{DBLP:journals/corr/abs-1812-03079}\cite{DBLP:journals/corr/abs-1903-00640}\cite{Djuric2018ShorttermMP}.
 
 We extend this research by applying the aforementioned algorithms to autonomous driving tasks and evaluating their performance in OpenAI's CarRacing-v0 environment and in the CARLA driving simulator while investigating input states of differing complexity, such as bird's-eye view or latent space representations \cite{dosovitskiy2017carla}.
 
@@ -140,13 +140,13 @@ We regard the typical reinforcement learning setting where an agent interacts wi
 
 As a result, the agent receives a reward $r_t$ and the subsequent state $s_{t+1}$ of his environment. The setup is assumed to follow the properties of a Markov decision process, where besides state space $\mathcal{S}$, action space $\mathcal{A}$ and reward function $r(s_t,a_t)$, we also include the transition function to the future states $p(s_{t+1}|s_t,a_t)$. The objective of the agent is to maximize his expected return $R_t$, which is the cumulative reward of the current state $s_t$ and the rewards of future states, discounted with a factor $\gamma \in [0,1]$.
 
-In actor-critic methods the critic calculates the action value $Q^\pi(s,a) = E[R_t|s_t=s,a]$ describing the expected cumulative return for taking action a in state s under the given policy $\pi$, thus evaluating the selected action. The actor on the other hand estimates an optimal policy, following $\pi(s) = argmax_aQ(s,a)$. Similar to the action value, $V^\pi(s) = E[R_t|s_t=s]$ defines the value of state $s$ under the policy $\pi$ and simply describes the expected return for pursuing a policy $\pi$ from state $s$.
+In actor-critic methods the critic calculates the action value $Q^\pi(s,a) = E[R_t|s_t=s,a]$ describing the expected cumulative return for taking action a in state s under the given policy $\pi$, thus evaluating the selected action \cite{lilianweng}. The actor on the other hand estimates an optimal policy, following $\pi(s) = argmax_aQ(s,a)$. Similar to the action value, $V^\pi(s) = E[R_t|s_t=s]$ defines the value of state $s$ under the policy $\pi$ and simply describes the expected return for pursuing a policy $\pi$ from state $s$.
 
 In our project, we consider a continuous control task in the context of autonomous driving where three different actions can be selected: steering in a range of [-1,1], throttle  and acceleration in a range of [0,1] respectively.
 
 \section{Concept/Methods and Models}
 
-In the course of this project, three differnt algorithms are used. Following the work of Lillicrap et al. \cite{journals/corr/LillicrapHPHETS15} and Mnih et al. \cite{mnihAsynchronousMethodsDeep2016}, the DDPG- and A3C algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0. Later on, the PPO algorithm is applied to solve a continuous control task in the CARLA simulator.
+In the course of this project, three differnt algorithms are used. Following the work of Lillicrap et al. \cite{lillicrapContinuousControlDeep2015} and Mnih et al. \cite{mnihAsynchronousMethodsDeep2016}, the DDPG and A3C algorithms are implemented and compared according to their performance in the Gym environment CarRacing-v0. Later on, the PPO algorithm is applied to solve a continuous control task in the CARLA simulator.
 
 The concept for our project consists of four major fields of interest. 1. Evaluating the performance of the implemented algorithms in order to find the reinforcement learning model which resolves our task best. 2. successfully defining a reward function that will teach the agent how to drive. Then, increasing the complexity of the reward function to driving in the right lane and, finally, driving in the lane without crashing. 3. Finding the optimal input state representation by varying the levels of realism of the input images. 4. Trying out the following three terminal conditions: Reaching more than 2000 steps, crashing and exceeding a certain distance to the center line of the road.
 %TODO: Hier unser Konzept analog zur Präsentation vorstellen (Slide mit den 4 Kasten)
@@ -155,9 +155,9 @@ The concept for our project consists of four major fields of interest. 1. Evalua
 %\subsubsection{DQN}
 
 \subsection{DDPG}
-One very notable advance in reinforcement learning has been made by the development of the so-called "Deep Q Network" (Mnih et al., 2015). The DQN is able to solve tasks with high-dimensional observation spaces. However, it is only efficiently capable of working with discrete and low-dimensional action spaces. In order to adapt a (DQN) for the successful use with continuous control problems, as given in CarRacing-v0, a discretization of the action space has to be carried out, which can lead to two main difficulties: an explosion in the number of possible actions and the loss of important information \cite{journals/corr/LillicrapHPHETS15}.
+One notable advance in reinforcement learning has been made by the development of the Deep Q Network (DQN) \cite{mnih2015humanlevel}. The DQN is able to solve tasks with high-dimensional observation spaces. However, it is only efficiently capable of working with discrete and low-dimensional action spaces. In order to adapt a DQN for the successful use with continuous control problems, as given in CarRacing-v0, a discretization of the action space has to be carried out, which can lead to two main difficulties: an explosion in the number of possible actions and the loss of important information \cite{lillicrapContinuousControlDeep2015}.
 
-To evade these obstacles (Lillicrap et al.) propose a new approach, called the Deep Deterministic Policy Gradient (DDPG), which is a model-free, off-policy actor-critic algorithm. They adopt the advantages of (DQN) and combine them with the actor-critic framework, resulting in the stabilization of Q-learning by using a replay buffer and soft updates on the target networks $\theta'$ of both actor and critic, through
+To evade these obstacles Lillicrap et al. propose a novel approach, the Deep Deterministic Policy Gradient, which is a model-free, off-policy actor-critic algorithm. They adopt the advantages of DQN and combine them with the actor-critic framework, resulting in the stabilization of Q-learning through the usage of a replay buffer and soft updates on the target networks $\theta'$ of both actor and critic, through
 
 \begin{equation}
 \tau << 1:\theta' \leftarrow \tau\theta + (1-\tau)\theta',
@@ -169,12 +169,11 @@ In order to enable better exploration, we add noise in the form of the Ornstein-
 
 \subsection{A3C}
 The Asynchronous Advantage Actor-Critic (A3C), introduced by Mnih et al. \cite{mnihAsynchronousMethodsDeep2016}, has become a go-to algorithm in 
-Deep Reinforcement Learning due to its performance, robustness, and ability to perform well on high-dimensional action- and state-spaces. 
+Deep Reinforcement Learning due to its performance, robustness, and ability to perform well on high-dimensional action and state spaces. 
 A key characteristic of A3C is the utilization of multiple agents, each equipped with its own environment instance and its own set of network parameters. 
 One of the advantages of this approach is the diversification of the collected experience but yields the challenge of handling gradient update 
 mismatches between the asynchronously collected network parameter updates. 
-In our implementation of A3C we adapted several alterations as opposed to the original version by Mnih et al.. Despite being an on-policy method, we decided 
-to include a numerically efficient n-step return as proposed by jaromiru \cite{janischLetMakeA3C}. % (eq. x). 
+In our implementation of A3C we adapt several alterations as opposed to the original version by Mnih et al.. Despite being an on-policy method, we include a numerically efficient n-step return as proposed by jaromiru \cite{janischLetMakeA3C}. % (eq. x). 
 % \begin{equation}
 %    R_{0} = r_{0} + \gamma r_1 + \gamma^2 r_2 + ... + \gamma^{n-1} r_{n-1}
 %    R_{1} = r_{1} + \gamma r_2 + \gamma^2 r_3 + ... + \gamma^{n-1} r_{n}
@@ -182,8 +181,8 @@ to include a numerically efficient n-step return as proposed by jaromiru \cite{j
 % With R denoting the discounted Return at each timestep, $\gamma$ the discount factor, and r the reward at each timestep. Rather than calculating 
 
 Furthermore, experiences are buffered in a global update 
-queue and updates are only performed by a master network. This feature helps decorrelating experiences, emphasizes exploration and allows for more gpu-friendly
-batch-learning. However, one has to keep in mind that this contradicts the original update rule by mnih et al. and might lead to policy lag. A proper update 
+queue and updates are only performed by a master network. This feature helps decorrelate experiences, emphasizes exploration and allows for more GPU-friendly
+batch-learning. However, one has to keep in mind that this contradicts the original update rule by Mnih et al. and might lead to policy lag. A proper update 
 frequency in the master network is therefore of major importance.
 
 \subsection{PPO}
@@ -191,8 +190,8 @@ frequency in the master network is therefore of major importance.
 The Proximal Policy Optimization (PPO) algorithm was developed to improve training stability by avoiding parameter updates that excessively change a given policy at each step. The algorithm that PPO is based on is called Trust Region Policy Optimization (TRPO) and realizes training stability through a KL divergence constraint on the policy update range at each iteration \cite{pmlr-v37-schulman15}. PPO simplifies this concept by incorporating the hard constraint into the objective function through Lagrangian duality and, thus, softening the constraint. Additionally, PPO clips the objective function if the ratio between old and new policy lies outside the range of [1-$\epsilon$, 1+$\epsilon$], which discourages large policy changes. Tests on benchmark tasks have shown PPO to achieve outstanding results while reducing TRPOs complexity significantly \cite{DBLP:journals/corr/SchulmanWDRK17}.
 
 \subsection{Reward function}
-The design of the reward function turned out to be a much more difficult procedure as expected initially. The already provided rewards in gym's CarRacing environment were rather simple and still led to a good result in the end. For CARLA however, it was necessary to invest more time into the engineering and designing of a suitable inducement system, because the driving behavior depended on more factors and the performance metric was not just driving as fast as possible. In the following, the process of arriving at our final reward function will be described. \newline 
-In the first step, we investigated possible sensor and measurement inputs that might have an impact on the driving behavior and discussed on their impact. As summarized in Table 1, the outcome consists of eight possible features, that were tested in the following.
+The design of the reward function is of major importance to the outcome of this project while being a much more complex process than initially expected. In Gym's CarRacing environment good results could be achieved in the end by employing the rather simple and already provided reward function to our model. For CARLA however, it was necessary to invest more time into the engineering and design of a suitable incentive system, as the driving behavior in this environment depends on larger variety of factors and the performance is not only measured by the speed of the agent. IThe process of finding a suitable reward function comprises the following tasks: \newline 
+In the first step, we investigate possible sensor and measurement inputs that might have an impact on the driving behavior and discuss their impact. As summarized in Table 1, the outcome consists of eight possible features, that are subsequently tested.
 
 
 \begin{table}[!h]
@@ -217,10 +216,10 @@ In the first step, we investigated possible sensor and measurement inputs that m
 \end{table}
 
 
-We started with incrementally adding these attributes to our reward calculation and quickly realized, that the main challenge is adjusting the weights and harmonizing the contrary effects of the terms.
-An example would be, that giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays only few attention on lane invasions. On the opposite side, the agent will drive very slowly or even not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but several possible components, it results in a complex combinatorical problem that can either be solved by trail and error or applying permutational optimization techniques. To achieve initial results, we started to discover a proper reward function "by hand". 
+We start with incrementally adding these attributes to our reward calculation leading to the realization that the main challenge is adjusting the weights and harmonizing the contrary effects of the terms.
+For example, giving the velocity a relatively high weight, such as 0.8, while giving the distance to center line a weight of 0.2 results in an agent that speeds over the map and pays only little attention to lane invasions. On the other hand, the agent will drive very slowly or not at all, if the rewards for oscillations are too high compared to the velocity. Considering, that we have not only two, but several possible components, this results in a complex combinatorical problem that can either be solved by trial and error or by applying permutational optimization techniques. Initial results are achieved by finding a reward function through the former method. 
 \newline
-We pruned the above list by applying the following considerations that resulted from tesing different approaches. Firstly, some components show a redundant behavior and hence one of them can be removed. An example would be the velocity and the position change - both contain the same information. Further, the attributes lane invasion and steering angle didnn't affect the driving behavior in a positive way. The two most important parameters turned out be the velocity and the delta heading, which expressed the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in table 2.
+The above list is reduced by applying the following considerations that result from testing different approaches. Firstly, some components show a redundant behavior and, hence, one of them can be removed. An example would be the velocity and the position change - both contain the same information. Furthermore, the lane invasion and steering angle attributes do not affect the driving behavior in a positive way. The two most important parameters turn out be the velocity and the delta heading, which expresses the relative angle to the current street angle. Our final reward function and the aggregation weights can be found in table 2.
 \newline
 We want to note here, that a performance-wise comparison between the different parameter combination is hard to measure with a metric and is not the aim of this project. However, it would make sense to develop a suitable approach to categorize and assess the performance of different reward functions towards the desired outcome. 
 
@@ -242,12 +241,12 @@ We want to note here, that a performance-wise comparison between the different p
 	\end{tabularx}
 \end{table}
 
-The result (in combination with tuning the reinforcement learning models) is very promising and can be summarized as follows: The agent is capable of driving smoothly within the right lane and can perform turn manuevers on most intersections. It attempts to drive around other vehicles, but is not capable of breaking. We trained different models on this reward function and all of them had a good performance compared to other incentive attempts. We assume, that event better results can be achieved when applying an improved optimization method to find out the best parameter-combination. However, this is a combinatorical problem and requires several simulation runs. 
+The result, in combination with tuning the reinforcement learning models, is very promising and can be summarized as follows: The agent is capable of driving smoothly within the right lane and can perform turn maneuvers on most intersections. It attempts to drive around other vehicles, but is not capable of braking. Different models were trainde on this reward function and all of them had a good performance compared to other incentive attempts. We assume, that even better results can be achieved by applying an improved optimization method to find the best parameter combinations. However, this is a combinatorical problem and requires several simulation runs. 
 
 
 \subsection{Input representation}
 Dealing with the high-dimensional environment in CARLA is one of the central challenges in implementing a well functioning 
-RL algorithm. In consideration of an abundance of possible sensor types available in CARLA we decided to pursue increasing
+RL algorithm. In consideration of an abundance of possible sensor types available in CARLA we pursue increasing
 levels of realism which generally also correspond to increasing levels of difficulty. These aforementioned levels of realism involve the following:
 \begin{itemize}
     \item Ground truth segmented bird's eye view
@@ -260,10 +259,10 @@ of the RL agent.
 \paragraph{Ground truth segmented bird's eye view}
 The Ground truth segmented bird's eye view is a rather unrealistic scenario, in which we assume availability of a camera positioned 
 20m above the performing agent. It is merely imaginable in a fully observed city where autonomous driving is part of a high-level traffic 
-control system. Albeit rather unrealistic, we decided to implement a 13-class ground truth segmented bird's eye view due to its similarity to 
+control system. Though rather unrealistic, we implement a 13-class ground truth segmented bird's eye view due to its similarity to 
 the CarRacing 
 environment and its obvious advantages in containing information central to navigational tasks. The full list of the 
-included classes are described by dosovitskiy et al.\cite{dosovitskiy2017carla}. We deemed a 1-channel 
+included classes are described by Dosovitskiy et al.\cite{dosovitskiy2017carla}. We deem a 1-channel 
 grayscale image with size 64x64 
 large enough to contain key information for the algorithm (fig. x l.)
 
@@ -278,30 +277,30 @@ large enough to contain key information for the algorithm (fig. x l.)
         \end{figure}
 
 \paragraph{Ground truth segmented frontview}
-Much like the Ground truth segmented bird's eye view, the corresponding front view input representation assumes the availability of a 
+Much like the ground truth segmented bird's-eye view, the corresponding front view input representation assumes the availability of a 
 perfect segmentation camera. Nonetheless, we increase realism with this representation as the camera is placed in front of the car.
-Again, we chose a 13-class, 1-channel grayscale image with a slightly increased size of 80x80 to account for a larger view angle of the 
+Again, we choose a 13-class, 1-channel grayscale image with a slightly increased size of 80x80 to account for a larger view angle of the 
 camera. 
 \paragraph{Latent space generated from ground truth segmented images}
-In this section we will further discuss a modified version of the integrated encoder-decoder network that is based on 
-dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. 
+In this section we further discuss a modified version of the integrated encoder-decoder network that is based on 
+Dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} implementation. 
 The underlying idea of this model is to 
 guide feature extraction towards more useful, problem-specific features by exposing the model to the additional 
-target of reconstructing a bird's eye view from the vehicle-based camera images.
+target of reconstructing a bird's-eye view from the vehicle-based camera images.
 In its original architecture, the network comprises 
-5 input tensors and 7 output tensors with the inputs representing images of a front-, rear-, left-, right, and top-view camera. The 
+five input tensors and seven output tensors with the inputs representing images of a front-, rear-, left-, right-, and top-view camera. The 
 model is built with the Keras functional API and generally serves two purposes. On the one hand, each input tensor is encoded into 
-a 64-sized feature vector and decoded into it's original shape with a cross entropy loss with regard to the original input. This is 
-achieved with separate branches of autoencoders with 3 convolutions respectively. On the other 
-hand, a separate generative branch creates a bird's eye view reconstruction based on the concatenated feature vectors of the 
-vehicle-based cameras. In addition to the cross entropy loss at the reconstructed bird's eye view output, a mean square error 
+a 64-sized feature vector and decoded into its original shape with a cross entropy loss with regard to the original input. This is 
+achieved with separate branches of autoencoders with three convolutions respectively. On the other 
+hand, a separate generative branch creates a bird's-eye view reconstruction based on the concatenated feature vectors of the 
+vehicle-based cameras. In addition to the cross entropy loss at the reconstructed bird's-eye view output, a mean squared error 
 loss is calculated against the output of a subtract layer between the autoencoder's feature vector und the reconstructed feature vector to support
 convergence. Notably, the autoencoder branch of the top-down camera view is solely purposed for improving the latent space of the generative branch 
 during training and is thus not required for inference. 
-\newline In comparison to dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} vanilla version, we 
-adjusted the architecture to fit the single camera bottlenecks into a length 64 vector and the reconstructed bird's eye view
-bottleneck into a length 128 vector. To reduce complexity, we condensed both input and target segmentation images to 3 classes 
-and implemented a generalized weighted cross entropy\cite{zhangGeneralizedCrossEntropy2018} loss function to 
+\newline In comparison to Dziubinski's \cite{dziubinskiSemanticSegmentationSemantic2019} vanilla version, we 
+adjust the architecture to fit the single camera bottlenecks into a length 64 vector and the reconstructed bird's-eye view
+bottleneck into a length 128 vector. To reduce complexity, we condense both input and target segmentation images to three classes 
+and implement a generalized weighted cross entropy\cite{zhangGeneralizedCrossEntropy2018} loss function to 
 account for the unbalanced distribution of vehicles and obstacles.
 \begin{figure}[thpb]
    \centering
@@ -432,7 +431,8 @@ Despite using a weighted categorical cross entropy loss, the network struggled w
 of the \textit{vehicle and obstacles} class. Aside from improving training data and network parameters, we consider the usage of more
 sophisticated encoder-decoder models such as Deeplab-V3 for feature extraction as promising. Moreover, we believe feature extraction 
 models should rather be fine-tuned during the agent's training, than be used for inference only. This way, a trade-off between 
-problem-specific optimal feature extraction and data/time efficiency can be pursued.
+problem-specific optimal feature extraction and data/time efficiency can be pursued. Given the variety of available sensors in CARLA, additional
+input information such as 2D-Lidar data might further improve the agents ability to avoid crashes. 
 
 \begin{table}[!h]
 	\footnotesize
@@ -451,9 +451,9 @@ problem-specific optimal feature extraction and data/time efficiency can be purs
 
 TABLE V lists our overall project goals with respect to the driving behavior of our best-performing agent. 
 The defined reward functions managed to teach our agent how to follow his lane with input states in ground truth bird's eye view representation.
-The agent actively tried to avoid crashes in some cases, however, we believe that further are adjustments to the reward function could improve 
+The agent actively tried to avoid crashes in some cases, however, we believe that further adjustments to the reward function could improve 
 the results in this area. Terminating after 2000 steps or after a crash improved the agent's behavior while terminating when the agent moved too far
-from the center line had a negative impact on training results.
+from the center line had a negative impact on training results. 
 
 
 \section{Conclusions}

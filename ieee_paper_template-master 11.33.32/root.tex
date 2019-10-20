@@ -60,10 +60,10 @@
 Deep Reinforcement Learning with Continuous Control in CARLA
 }
 
-\author{Moritz Zanger$^{1}$Florian Rottach$^{1}$Izel Kilinic$^{1}$ % <-this % stops a space
+\author{Moritz Zanger$^{1}$ Florian Rottach$^{1}$ Izel Kilinc$^{1}$ % <-this % stops a space
 \thanks{$^{1}$The authors are with FZI Research Center for Information Technology, Haid-und-Neu-Str. 10-14, 76131 Karlsruhe, Germany
 %        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
-        {\tt\small \{kuhnt, zoellner\}@fzi.de}}%
+        {\tt\small \{, uzdnz\}@student.kit.edu}}%
 }        
         
 \begin{document}
@@ -106,9 +106,7 @@ The task of teaching vehicles how to drive autonomously in urban scenarios is a 
 
 However, two major drawbacks of reinforcement learning methods are their heavy depency on adequate input state representations (5) and, as with other machine learning techniques, their need of a sufficient amount of accurate sample data to train on. In order to be able to train safely on an adequate amount of data, one approach is the use of data from other domains. For this purpose, the urban driving simulator CARLA has been developed, which is used as a simulation environment for this project.
 
-In this paper, several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering different driving tasks. Additionally, reward functions for the respective problems are tested and several input represantations are designed and evaluated.
-
-?? What is it exactly that we contributed that is new to already existing research??
+In previous projects, CARLA has been used to learn policies that allow agents to navigate through complex urban environments via imitation learning methods (15)(12). In this paper, it serves as an environment to solve a continuous control task vie deep reinforcement learning. Several state-of-the-art reinforcement learning algorithms are implemented and compared, with regard to their performance considering driving tasks of increasing complexity. Additionally, reward functions for the respective problems are tested and different input represantations are designed and evaluated.
 
 %\subsection{Problem specification}
 %\subsection{Why RL? What is our goal/motivation?}
@@ -133,7 +131,9 @@ Various reinforcement learning tasks have been tackled successfully in the past,
 
 However, many tasks that could be solved with reinforcement learning approaches have continuous action spaces, to which approaches such as the DQN cannot be directly applied in a feasible manner (4). Therefore, algorithms that can handle these high-dimensional action spaces have been developed in recent years. Mnih et al. present asynchronous variations of standard reinforcement learning algorithms and report the Asynchronous Advantage Actor-Critic (A3C) to have achieved the best results in their evaluations, including a physics control task with continuous action space in the MuJoCo Physics Simulator (6). Lillicrap et al. introduce a different algorithm called Deep Deterministic Policy Gradient (DDPG), which they also evaluate in simulated physical environments, receiving near perfect results (3).
 
-DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance (1), suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks.
+DDPG is also used by Kendall et al. to teach a full-sized autonomous vehicle a lane-following policy in an on-board manner. While already achieving good results with DDPG alone, they show that the additional use of a Variational Autoencoder greatly improves the overall performance (1), suggesting an improved state representation as an area of possible further development in reinforcement learning for continuous control tasks. Another proposition to reduce the complexity of visual features that has investigated in several projects is the representation of the input images as a top-down view on the vehicle (13)(12)(11).
+
+We extend this research by applying the aforementioned algorithms to autonomous driving tasks and evaluating their performance in OpenAI's CarRacing-v0 environment and in the CARLA driving simulator (14) while investigating input states of differing complexity, such as bird's-eye view or latent space representations.
 
 %â€œHuman-level control through deep reinforcement learningâ€ (2015)
 %â€œCARLA: An Open Urban Driving Simulatorâ€

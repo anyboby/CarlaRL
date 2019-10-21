@@ -5,7 +5,11 @@
 - For the DDPG use the run.py for configuration and start up
 - Models can also be reloaded in the stable baselines file, we pushed some of the models - the most recent ones perform the best
 - We have also pushed a custom PPO implementation
-
+- to switch input states, modify flags   
+		self._data_gen
+        self._use_front_ae
+        self._use_birdseye
+	in the carla_env script
 ### Birds-eye-view
 - The implementation of the encoder-decoder architecture can be found under semantic_birdseyeview
 - There are also some models pushed

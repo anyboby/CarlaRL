@@ -13,7 +13,7 @@
 
         self._use_birdseye  
 
-	in the carla_env script
+	in the carla_env script (warning: switch training model to CNN/MLP policy in carla_env_MIF to fit the input)
 ### Birds-eye-view
 - The implementation of the encoder-decoder architecture can be found under semantic_birdseyeview
 - There are also some models pushed

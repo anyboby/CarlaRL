@@ -6,14 +6,20 @@
 - Models can also be reloaded in the stable baselines file, we pushed some of the models - the most recent ones perform the best
 - We have also pushed a custom PPO implementation
 - to switch input states, modify flags   
+
 		self._data_gen
+
         self._use_front_ae
+
         self._use_birdseye
+		
 	in the carla_env script
 ### Birds-eye-view
 - The implementation of the encoder-decoder architecture can be found under semantic_birdseyeview
 - There are also some models pushed
-- use the files train_model* to train the birds-eye-view based on sample images
+- separate requirements.txt in semantic_birdseyeview
+- use the script train_model_rgb to train the birds-eye-view based on rgb images (should located in a "camera_storage" folder as npy)
+- use the script train_model_semantic to train the birds-eye-view based on segmented images (should located in a "camera_storage" folder as npy)
 
 ### Wrapper
 - We used the carla_rllib wrapper from Sven Müller
@@ -28,7 +34,9 @@
 
 ## Prerequisites
 virtualenv -p python3 carla_env
+
 source carla_env/bin/activate
+
 pip install -r requirements.txt
 
 ## Bashrc anpassen:

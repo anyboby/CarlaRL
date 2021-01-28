@@ -24,10 +24,14 @@
 *camera_storage*
 *histories/
 *movies/
+*carla_env/
 *semantic_birdseye_env/
 *semantic_birdseyeview/models/
-tensorboard_logs/
+*tensorboard_logs/
+template/
 logs/
+data/
+ieee*
 
 .ipynb_checkpoints
 ghostdriver.log

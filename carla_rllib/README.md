@@ -1,18 +1,13 @@
 # CARLA Reinforcement Learning Library (work under progress)
+By sven mueller (FZI)
 
 This library supports reinforcement learning in the CARLA Simulator.
 
 ## Installation
 
-- Clone this repository to your local machine:
-
-```console
-$ git clone https://ids-git.fzi.de/svmuelle/carla_rllib.git
-```
-
 **Optional**: checkout branch `carla_env_0.9.5` in case you are using carla version 0.9.5 **(this version won't be updated)**
 
-- Install the required python packages (into your virtual environment):
+- Install the required python packages into your virtual environment:
 
 ```console
 $ cd carla_rllib
